@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/authRoutes.js";
+import companyRoutes from "./routes/companyRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
@@ -23,6 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use("/api/company", companyRoutes);        // Company registration/management
 app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/profile", profileRoutes);

@@ -1,9 +1,10 @@
 import User from "../models/User.js";
+import Employee from "../models/Employee.js";
 import generateToken from "../utils/generateToken.js";
 import { hashPassword, comparePassword } from "../utils/hashPassword.js";
 
 /**
- * @desc    Login User
+ * @desc    Login User (supports both email and loginId/employeeCode)
  * @route   POST /api/auth/login
  * @access  Public
  */
@@ -19,10 +20,21 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Find user by loginId OR email
-    const user = await User.findOne({
-      $or: [{ loginId: loginIdOrEmail }, { email: loginIdOrEmail }]
-    });
+    let user = null;
+
+    // First, try to find user by email
+    user = await User.findOne({ email: loginIdOrEmail.toLowerCase() });
+
+    // If not found by email, try to find employee by employeeCode and get user
+    if (!user) {
+      const employee = await Employee.findOne({ 
+        employeeCode: loginIdOrEmail.toUpperCase() 
+      });
+
+      if (employee && employee.userId) {
+        user = await User.findById(employee.userId);
+      }
+    }
 
     // Check if user exists
     if (!user) {
@@ -53,12 +65,29 @@ export const loginUser = async (req, res) => {
     // Generate JWT token
     const token = generateToken(user._id);
 
+    // Get employee details if exists
+    const employee = await Employee.findOne({ userId: user._id });
+
     // Return response
     res.status(200).json({
       success: true,
       token,
-      role: user.role,
-      isFirstLogin: user.isFirstLogin
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        isFirstLogin: user.isFirstLogin
+      },
+      employee: employee ? {
+        _id: employee._id,
+        employeeCode: employee.employeeCode,
+        fullName: employee.fullName,
+        department: employee.department,
+        designation: employee.designation
+      } : null,
+      message: user.isFirstLogin 
+        ? "First login detected. Please change your password." 
+        : "Login successful"
     });
   } catch (error) {
     console.error(error);
