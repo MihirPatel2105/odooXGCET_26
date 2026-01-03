@@ -4,9 +4,13 @@ const API_BASE_URL = '/api' // Using Vite proxy
 // Helper function to make API calls
 const apiCall = async (endpoint, options = {}) => {
   try {
+    // Get token from localStorage
+    const token = localStorage.getItem('token')
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers,
       },
       ...options,
@@ -83,6 +87,9 @@ export const attendanceAPI = {
   
   getByEmployee: (employeeId) => 
     apiCall(`/attendance/employee/${employeeId}`),
+  
+  getByDate: (date) => 
+    apiCall(`/attendance/date/${date}`),
   
   getAll: () => apiCall('/attendance'),
 }

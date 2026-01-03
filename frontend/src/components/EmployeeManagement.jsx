@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { employeeAPI } from '../services/api'
 
 const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -6,70 +7,45 @@ const EmployeeManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all')
   const [showAddEmployee, setShowAddEmployee] = useState(false)
   const [selectedEmployees, setSelectedEmployees] = useState([])
+  const [employees, setEmployees] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Mock employee data
-  const employees = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      department: 'Engineering',
-      position: 'Senior Developer',
-      status: 'active',
-      joinDate: '2023-03-15',
-      phone: '+1 (555) 123-4567',
-      manager: 'John Smith',
-      avatar: 'SJ'
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      email: 'michael.chen@company.com',
-      department: 'Marketing',
-      position: 'Marketing Specialist',
-      status: 'active',
-      joinDate: '2024-01-22',
-      phone: '+1 (555) 234-5678',
-      manager: 'Lisa Wong',
-      avatar: 'MC'
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      email: 'emily.rodriguez@company.com',
-      department: 'Sales',
-      position: 'Sales Manager',
-      status: 'active',
-      joinDate: '2022-11-08',
-      phone: '+1 (555) 345-6789',
-      manager: 'David Brown',
-      avatar: 'ER'
-    },
-    {
-      id: 4,
-      name: 'James Wilson',
-      email: 'james.wilson@company.com',
-      department: 'Operations',
-      position: 'Operations Coordinator',
-      status: 'inactive',
-      joinDate: '2023-07-12',
-      phone: '+1 (555) 456-7890',
-      manager: 'Anna Davis',
-      avatar: 'JW'
-    },
-    {
-      id: 5,
-      name: 'Lisa Thompson',
-      email: 'lisa.thompson@company.com',
-      department: 'Finance',
-      position: 'Financial Analyst',
-      status: 'active',
-      joinDate: '2024-02-03',
-      phone: '+1 (555) 567-8901',
-      manager: 'Robert Kim',
-      avatar: 'LT'
+  useEffect(() => {
+    fetchEmployees()
+  }, [])
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true)
+      const response = await employeeAPI.getAll()
+      if (response.success && response.employees) {
+        // Transform backend data to match component structure
+        const transformedEmployees = response.employees.map(emp => ({
+          id: emp._id,
+          name: emp.fullName || 'N/A',
+          email: emp.email || 'N/A',
+          department: emp.department || 'N/A',
+          position: emp.designation || 'N/A',
+          status: emp.status === 'ACTIVE' ? 'active' : 'inactive',
+          joinDate: emp.joiningDate ? new Date(emp.joiningDate).toISOString().split('T')[0] : 'N/A',
+          phone: emp.phone || 'N/A',
+          manager: emp.managerName || 'N/A',
+          avatar: (emp.fullName || 'NA').split(' ').map(n => n[0]).join('').toUpperCase()
+        }))
+        setEmployees(transformedEmployees)
+      } else {
+        setEmployees([])
+      }
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching employees:', err)
+      setError(err.message)
+      setEmployees([])
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
 
   const departments = ['Engineering', 'Marketing', 'Sales', 'Operations', 'Finance', 'HR']
   
@@ -100,8 +76,29 @@ const EmployeeManagement = () => {
 
   return (
     <div className="employee-management">
-      {/* Header */}
-      <div className="page-header card">
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading employees...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="error-state">
+          <p className="error-message">❌ Error: {error}</p>
+          <button className="btn btn-primary" onClick={fetchEmployees}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!loading && !error && (
+        <>
+          {/* Header */}
+          <div className="page-header card">
         <div className="header-content">
           <div>
             <h1 className="page-title">Employee Management</h1>
@@ -276,6 +273,8 @@ const EmployeeManagement = () => {
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Add Employee Modal */}
       {showAddEmployee && (

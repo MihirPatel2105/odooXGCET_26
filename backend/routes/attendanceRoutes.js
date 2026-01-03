@@ -39,7 +39,7 @@ router.get("/all", protect, adminOnly, getAllAttendance);
 router.get("/today", protect, adminOnly, getTodayAttendance);
 
 // Get attendance by date (Admin)
-router.get("/date", protect, adminOnly, getAttendanceByDate);
+router.get("/date/:date", protect, adminOnly, getAttendanceByDate);
 
 // Get payable days for payslip generation (Admin)
 router.get("/payable-days", protect, adminOnly, getPayableDays);

@@ -73,7 +73,7 @@ function App() {
         setIsAuthenticated(true)
         // Store token if provided
         if (response.token) {
-          localStorage.setItem('authToken', response.token)
+          localStorage.setItem('token', response.token)
         }
       } else {
         alert(response.message || 'Invalid credentials')
@@ -124,7 +124,7 @@ function App() {
           setIsAuthenticated(true)
           // Store token if provided
           if (token) {
-            localStorage.setItem('authToken', token)
+            localStorage.setItem('token', token)
           }
         } else {
           alert(response.message || 'Registration failed')

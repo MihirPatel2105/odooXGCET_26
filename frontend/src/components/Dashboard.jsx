@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { employeeAPI, attendanceAPI } from '../services/api'
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -6,109 +7,76 @@ const Dashboard = () => {
   const [showCheckInOut, setShowCheckInOut] = useState(false)
   const [isCheckedIn, setIsCheckedIn] = useState(false)
   const [checkInTime, setCheckInTime] = useState('')
+  const [employees, setEmployees] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [checkingAttendance, setCheckingAttendance] = useState(false)
 
-  // Mock employee data with status indicators
-  const employees = [
-    {
-      id: 1,
-      name: 'Attractive Walrus',
-      department: 'Engineering',
-      position: 'Senior Developer',
-      email: 'a.walrus@company.com',
-      phone: '+1 234-567-8901',
-      avatar: 'AW',
-      status: 'present',
-      color: '#4ade80'
-    },
-    {
-      id: 2,
-      name: 'Pleased Zebra',
-      department: 'Marketing',
-      position: 'Marketing Manager',
-      email: 'p.zebra@company.com',
-      phone: '+1 234-567-8902',
-      avatar: 'PZ',
-      status: 'present',
-      color: '#fb923c'
-    },
-    {
-      id: 3,
-      name: 'Calm Dove',
-      department: 'HR',
-      position: 'HR Specialist',
-      email: 'c.dove@company.com',
-      phone: '+1 234-567-8903',
-      avatar: 'CD',
-      status: 'present',
-      color: '#60a5fa'
-    },
-    {
-      id: 4,
-      name: 'Green Nightingale',
-      department: 'Finance',
-      position: 'Financial Analyst',
-      email: 'g.nightingale@company.com',
-      phone: '+1 234-567-8904',
-      avatar: 'GN',
-      status: 'present',
-      color: '#34d399'
-    },
-    {
-      id: 5,
-      name: 'Jenilor',
-      department: 'Engineering',
-      position: 'Full Stack Developer',
-      email: 'jenilor@company.com',
-      phone: '+1 234-567-8905',
-      avatar: 'JE',
-      status: 'present',
-      color: '#a78bfa'
-    },
-    {
-      id: 6,
-      name: 'Green Rhinoceros',
-      department: 'Sales',
-      position: 'Sales Executive',
-      email: 'g.rhinoceros@company.com',
-      phone: '+1 234-567-8906',
-      avatar: 'GR',
-      status: 'present',
-      color: '#22c55e'
-    },
-    {
-      id: 7,
-      name: 'Striking Antelope',
-      department: 'Operations',
-      position: 'Operations Manager',
-      email: 's.antelope@company.com',
-      phone: '+1 234-567-8907',
-      avatar: 'SA',
-      status: 'present',
-      color: '#f59e0b'
-    },
-    {
-      id: 8,
-      name: 'Swift Eagle',
-      department: 'Engineering',
-      position: 'DevOps Engineer',
-      email: 's.eagle@company.com',
-      phone: '+1 234-567-8908',
-      avatar: 'SE',
-      status: 'on-leave',
-      color: '#3b82f6'
-    },
-    {
-      id: 9,
-      name: 'Bright Falcon',
-      department: 'Marketing',
-      position: 'Content Writer',
-      email: 'b.falcon@company.com',
-      phone: '+1 234-567-8909',
-      avatar: 'BF',
-      status: 'absent',
-      color: '#ef4444'
+  useEffect(() => {
+    fetchEmployees()
+    checkTodayAttendance()
+  }, [])
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true)
+      const response = await employeeAPI.getAll()
+      if (response.success && response.employees) {
+        // Transform backend data to match component structure
+        const transformedEmployees = response.employees.map((emp, index) => ({
+          id: emp._id,
+          name: emp.fullName || 'N/A',
+          department: emp.department || 'N/A',
+          position: emp.designation || 'N/A',
+          email: emp.email || 'N/A',
+          phone: emp.phone || 'N/A',
+          avatar: (emp.fullName || 'NA').split(' ').map(n => n[0]).join('').toUpperCase(),
+          status: emp.status === 'ACTIVE' ? 'present' : 'absent',
+          color: getRandomColor(index)
+        }))
+        setEmployees(transformedEmployees)
+      } else {
+        setEmployees([])
+      }
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching employees:', err)
+      setError(err.message)
+      setEmployees([])
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  const checkTodayAttendance = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const response = await attendanceAPI.getByDate(today)
+      if (response.success && response.attendance) {
+        const userAttendance = response.attendance[0]
+        if (userAttendance && userAttendance.checkIn) {
+          setIsCheckedIn(true)
+          const checkInDate = new Date(userAttendance.checkIn)
+          const timeString = checkInDate.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          })
+          setCheckInTime(timeString)
+        }
+      }
+    } catch (err) {
+      console.error('Error checking attendance:', err)
+    }
+  }
+
+  const getRandomColor = (index) => {
+    const colors = [
+      '#4ade80', '#fb923c', '#60a5fa', '#34d399', '#a78bfa',
+      '#22c55e', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'
+    ]
+    return colors[index % colors.length]
+  }
 
   // Filter employees based on search
   const filteredEmployees = employees.filter(emp =>
@@ -141,39 +109,90 @@ const Dashboard = () => {
   }
 
   // Handle Check In
-  const handleCheckIn = () => {
-    const now = new Date()
-    const timeString = now.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    })
-    setCheckInTime(timeString)
-    setIsCheckedIn(true)
-    setShowCheckInOut(false)
+  const handleCheckIn = async () => {
+    try {
+      setCheckingAttendance(true)
+      const response = await attendanceAPI.checkIn()
+      
+      if (response.success) {
+        const now = new Date()
+        const timeString = now.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        })
+        setCheckInTime(timeString)
+        setIsCheckedIn(true)
+        setShowCheckInOut(false)
+        alert('Check-in successful!')
+      } else {
+        alert(response.message || 'Check-in failed')
+      }
+    } catch (error) {
+      console.error('Check-in error:', error)
+      alert('Check-in failed. Please try again.')
+    } finally {
+      setCheckingAttendance(false)
+    }
   }
 
   // Handle Check Out
-  const handleCheckOut = () => {
-    setIsCheckedIn(false)
-    setCheckInTime('')
-    setShowCheckInOut(false)
+  const handleCheckOut = async () => {
+    try {
+      setCheckingAttendance(true)
+      const response = await attendanceAPI.checkOut()
+      
+      if (response.success) {
+        setIsCheckedIn(false)
+        setCheckInTime('')
+        setShowCheckInOut(false)
+        alert('Check-out successful!')
+      } else {
+        alert(response.message || 'Check-out failed')
+      }
+    } catch (error) {
+      console.error('Check-out error:', error)
+      alert('Check-out failed. Please try again.')
+    } finally {
+      setCheckingAttendance(false)
+    }
   }
 
   return (
     <div className="employee-dashboard">
-      {/* Header with Search and New Button */}
-      <div className="employee-dashboard-header">
-        <button className="btn-new">NEW</button>
-        
-        <div className="search-bar-container">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="employee-search-input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading employees...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="error-state">
+          <p className="error-message">❌ Error: {error}</p>
+          <button className="btn btn-primary" onClick={fetchEmployees}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!loading && !error && (
+        <>
+          {/* Header with Search and New Button */}
+          <div className="employee-dashboard-header">
+            <button className="btn-new">NEW</button>
+            
+            <div className="search-bar-container">
+              <input
+                type="text"
+                placeholder="Search..."
+                className="employee-search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
         </div>
       </div>
 
@@ -233,8 +252,9 @@ const Dashboard = () => {
               <button 
                 className="btn-check-in"
                 onClick={handleCheckIn}
+                disabled={checkingAttendance}
               >
-                Check In →
+                {checkingAttendance ? 'Processing...' : 'Check In →'}
               </button>
             </div>
           ) : (
@@ -246,8 +266,9 @@ const Dashboard = () => {
               <button 
                 className="btn-check-out"
                 onClick={handleCheckOut}
+                disabled={checkingAttendance}
               >
-                Check Out →
+                {checkingAttendance ? 'Processing...' : 'Check Out →'}
               </button>
             </div>
           )}
@@ -315,6 +336,8 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

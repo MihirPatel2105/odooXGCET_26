@@ -296,7 +296,7 @@ export const getAllAttendance = async (req, res) => {
 ========================================= */
 export const getAttendanceByDate = async (req, res) => {
   try {
-    const { date } = req.query;
+    const { date } = req.params;
 
     if (!date) {
       return res.status(400).json({

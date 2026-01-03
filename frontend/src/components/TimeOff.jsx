@@ -1,61 +1,79 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { leaveAPI } from '../services/api'
 
 const TimeOff = ({ userRole = 'HR Manager' }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [showNewModal, setShowNewModal] = useState(false)
+  const [timeOffRequests, setTimeOffRequests] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // Check if user is admin or HR officer
-  const canApprove = userRole === 'HR Manager' || userRole === 'Admin'
+  const canApprove = userRole === 'HR Manager' || userRole === 'Admin' || userRole === 'ADMIN'
 
-  // Mock time off requests data
-  const [timeOffRequests, setTimeOffRequests] = useState([
-    {
-      id: 1,
-      employeeName: 'Attractive Walrus',
-      startDate: '28/10/2025',
-      endDate: '28/10/2025',
-      timeOffType: 'Paid time Off',
-      status: 'pending',
-      days: 1
-    },
-    {
-      id: 2,
-      employeeName: 'Pleased Zebra',
-      startDate: '15/01/2026',
-      endDate: '20/01/2026',
-      timeOffType: 'Sick time Off',
-      status: 'approved',
-      days: 6
-    },
-    {
-      id: 3,
-      employeeName: 'Calm Dove',
-      startDate: '05/02/2026',
-      endDate: '07/02/2026',
-      timeOffType: 'Paid time Off',
-      status: 'pending',
-      days: 3
-    },
-    {
-      id: 4,
-      employeeName: 'Green Nightingale',
-      startDate: '12/02/2026',
-      endDate: '14/02/2026',
-      timeOffType: 'Paid time Off',
-      status: 'rejected',
-      days: 3
-    },
-    {
-      id: 5,
-      employeeName: 'Jenilor',
-      startDate: '20/03/2026',
-      endDate: '22/03/2026',
-      timeOffType: 'Sick time Off',
-      status: 'approved',
-      days: 3
+  useEffect(() => {
+    fetchTimeOffRequests()
+  }, [])
+
+  const fetchTimeOffRequests = async () => {
+    try {
+      setLoading(true)
+      const response = await leaveAPI.getAll()
+      if (response.success && response.leaves) {
+        // Transform backend data to match component structure
+        const transformedRequests = response.leaves.map(leave => ({
+          id: leave._id,
+          employeeName: leave.employeeId?.fullName || 'Unknown',
+          startDate: new Date(leave.startDate).toLocaleDateString('en-GB'),
+          endDate: new Date(leave.endDate).toLocaleDateString('en-GB'),
+          timeOffType: leave.leaveType === 'SICK' ? 'Sick time Off' : 'Paid time Off',
+          status: leave.status.toLowerCase(),
+          days: leave.totalDays || 1
+        }))
+        setTimeOffRequests(transformedRequests)
+      } else {
+        setTimeOffRequests([])
+      }
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching time off requests:', err)
+      setError(err.message)
+      setTimeOffRequests([])
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
+
+  // Handle approve
+  const handleApprove = async (id) => {
+    try {
+      const response = await leaveAPI.approve(id)
+      if (response.success) {
+        setTimeOffRequests(requests =>
+          requests.map(req => req.id === id ? { ...req, status: 'approved' } : req)
+        )
+      }
+    } catch (err) {
+      console.error('Error approving request:', err)
+      alert('Failed to approve request')
+    }
+  }
+
+  // Handle reject
+  const handleReject = async (id) => {
+    try {
+      const response = await leaveAPI.reject(id)
+      if (response.success) {
+        setTimeOffRequests(requests =>
+          requests.map(req => req.id === id ? { ...req, status: 'rejected' } : req)
+        )
+      }
+    } catch (err) {
+      console.error('Error rejecting request:', err)
+      alert('Failed to reject request')
+    }
+  }
 
   // Filter requests
   const filteredRequests = timeOffRequests.filter(req => {
@@ -64,20 +82,6 @@ const TimeOff = ({ userRole = 'HR Manager' }) => {
     const matchesFilter = selectedFilter === 'all' || req.status === selectedFilter
     return matchesSearch && matchesFilter
   })
-
-  // Handle approve
-  const handleApprove = (id) => {
-    setTimeOffRequests(requests =>
-      requests.map(req => req.id === id ? { ...req, status: 'approved' } : req)
-    )
-  }
-
-  // Handle reject
-  const handleReject = (id) => {
-    setTimeOffRequests(requests =>
-      requests.map(req => req.id === id ? { ...req, status: 'rejected' } : req)
-    )
-  }
 
   // Get status badge class
   const getStatusClass = (status) => {
@@ -95,8 +99,29 @@ const TimeOff = ({ userRole = 'HR Manager' }) => {
 
   return (
     <div className="timeoff-container">
-      {/* Info Note */}
-      <div className="timeoff-info-note">
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading time off requests...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="error-state">
+          <p className="error-message">❌ Error: {error}</p>
+          <button className="btn btn-primary" onClick={fetchTimeOffRequests}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!loading && !error && (
+        <>
+          {/* Info Note */}
+          <div className="timeoff-info-note">
         <div className="note-header">
           <h3 className="note-title">Note</h3>
           <span className="note-author">Milan Sinha</span>
@@ -221,6 +246,8 @@ const TimeOff = ({ userRole = 'HR Manager' }) => {
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   )
 }
