@@ -51,22 +51,25 @@ const AttendanceTracking = () => {
     })
   }
 
+  const formatWorkHours = (workHours) => {
+    if (!workHours && workHours !== 0) return '-'
+    const hours = Math.floor(workHours)
+    const minutes = Math.round((workHours % 1) * 60)
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  }
+
+  const formatExtraHours = (extraHours) => {
+    if (!extraHours && extraHours !== 0) return '00:00'
+    const hours = Math.floor(extraHours)
+    const minutes = Math.round((extraHours % 1) * 60)
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  }
+
   const calculateWorkHours = (checkIn, checkOut) => {
     if (!checkIn || !checkOut) return '-'
     const diff = new Date(checkOut) - new Date(checkIn)
     const hours = Math.floor(diff / (1000 * 60 * 60))
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-  }
-
-  const calculateExtraHours = (checkIn, checkOut) => {
-    if (!checkIn || !checkOut) return '00:00'
-    const diff = new Date(checkOut) - new Date(checkIn)
-    const totalHours = diff / (1000 * 60 * 60)
-    const standardHours = 8
-    const extraHours = Math.max(0, totalHours - standardHours)
-    const hours = Math.floor(extraHours)
-    const minutes = Math.floor((extraHours % 1) * 60)
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   }
 
@@ -180,8 +183,8 @@ const AttendanceTracking = () => {
                   </td>
                   <td>{formatTime(record.checkIn)}</td>
                   <td>{formatTime(record.checkOut)}</td>
-                  <td>{calculateWorkHours(record.checkIn, record.checkOut)}</td>
-                  <td>{calculateExtraHours(record.checkIn, record.checkOut)}</td>
+                  <td>{record.workHours ? formatWorkHours(record.workHours) : calculateWorkHours(record.checkIn, record.checkOut)}</td>
+                  <td>{record.extraHours ? formatExtraHours(record.extraHours) : '00:00'}</td>
                 </tr>
               ))}
             </tbody>
