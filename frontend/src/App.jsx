@@ -10,6 +10,7 @@ import PayrollSystem from './components/PayrollSystem'
 import Reports from './components/Reports'
 import Settings from './components/Settings'
 import Profile from './components/Profile'
+import ChangePassword from './components/ChangePassword'
 import SignIn from './components/SignIn'
 import SignUp from './components/SignUp'
 // Employee Portal Components
@@ -52,6 +53,8 @@ function App() {
           return <EmployeeAttendance user={user} />
         case 'timeoff':
           return <EmployeeTimeOff user={user} />
+        case 'changePassword':
+          return <ChangePassword />
         default:
           return <EmployeeDashboard user={user} />
       }
@@ -74,6 +77,8 @@ function App() {
           return <Settings />
         case 'profile':
           return <Profile user={user} />
+        case 'changePassword':
+          return <ChangePassword />
         default:
           return <Dashboard />
       }

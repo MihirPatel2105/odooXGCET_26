@@ -68,6 +68,13 @@ const EmployeeNavbar = ({ user, activeView, setActiveView, onLogout }) => {
                 </div>
                 <div className="profile-menu-divider"></div>
                 <button 
+                  className="profile-menu-item"
+                  onClick={() => { setActiveView('changePassword'); setShowProfileMenu(false); }}
+                >
+                  <span className="menu-icon">🔒</span>
+                  Change Password
+                </button>
+                <button 
                   className="profile-menu-item danger"
                   onClick={onLogout}
                 >

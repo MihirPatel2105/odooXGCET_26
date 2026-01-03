@@ -191,7 +191,7 @@ const Navbar = ({ user, activeTab, setActiveTab, setActiveView, onLogout }) => {
                     <span className="menu-icon">👤</span>
                     <span>My Profile</span>
                   </button>
-                  <button className="menu-item">
+                  <button className="menu-item" onClick={() => { setActiveView('changePassword'); setShowUserMenu(false); }}>
                     <span className="menu-icon">🔒</span>
                     <span>Change Password</span>
                   </button>
