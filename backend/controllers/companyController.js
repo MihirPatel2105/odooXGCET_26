@@ -4,7 +4,7 @@ import Employee from "../models/Employee.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateToken } from "../utils/generateToken.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
-import { sendAdminSignupEmail } from "../utils/sendEmail.js";
+// import { sendAdminSignupEmail } from "../utils/sendEmail.js"; // Optional - email feature
 
 /* =========================================
    COMPANY SIGNUP/REGISTRATION

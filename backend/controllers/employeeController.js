@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import Company from "../models/Company.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateLoginId, generatePassword } from "../utils/generateLoginId.js";
-import { sendEmployeeCredentialsEmail } from "../utils/sendEmail.js";
+// import { sendEmployeeCredentialsEmail } from "../utils/sendEmail.js"; // Optional - email feature
 
 /* =========================================
    CREATE EMPLOYEE (ADMIN)

@@ -16,11 +16,14 @@ const apiCall = async (endpoint, options = {}) => {
       ...options,
     })
 
+    const data = await response.json()
+
     if (!response.ok) {
-      throw new Error(`API call failed: ${response.statusText}`)
+      // Use the backend error message if available
+      throw new Error(data.message || `API call failed: ${response.statusText}`)
     }
 
-    return await response.json()
+    return data
   } catch (error) {
     console.error('API Error:', error)
     throw error
@@ -49,6 +52,10 @@ export const authAPI = {
 
 // Employee APIs
 export const employeeAPI = {
+  // Employee endpoint
+  getSelf: () => apiCall('/employees/self/profile'),
+  
+  // Admin endpoints
   getAll: () => apiCall('/employees'),
   
   getById: (id) => apiCall(`/employees/${id}`),
@@ -73,33 +80,42 @@ export const employeeAPI = {
 
 // Attendance APIs
 export const attendanceAPI = {
-  checkIn: (employeeId) => 
-    apiCall('/attendance/checkin', {
+  // Employee endpoints
+  checkIn: () => 
+    apiCall('/attendance/check-in', {
       method: 'POST',
-      body: JSON.stringify({ employeeId }),
     }),
   
-  checkOut: (employeeId) => 
-    apiCall('/attendance/checkout', {
+  checkOut: () => 
+    apiCall('/attendance/check-out', {
       method: 'POST',
-      body: JSON.stringify({ employeeId }),
     }),
   
+  getSelf: (month, year) => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    if (year) params.append('year', year);
+    return apiCall(`/attendance/self${params.toString() ? '?' + params.toString() : ''}`);
+  },
+  
+  // Admin endpoints
   getByEmployee: (employeeId) => 
     apiCall(`/attendance/employee/${employeeId}`),
   
   getByDate: (date) => 
     apiCall(`/attendance/date/${date}`),
   
-  getAll: () => apiCall('/attendance'),
+  getAll: () => apiCall('/attendance/all'),
+  
+  getToday: () => apiCall('/attendance/today'),
 }
 
 // Leave/Time Off APIs
 export const leaveAPI = {
-  getAll: () => apiCall('/leaves'),
+  // Employee endpoints
+  getSelf: () => apiCall('/leaves/self'),
   
-  getByEmployee: (employeeId) => 
-    apiCall(`/leaves/employee/${employeeId}`),
+  getBalance: () => apiCall('/leaves/balance'),
   
   create: (leaveData) => 
     apiCall('/leaves', {
@@ -107,14 +123,21 @@ export const leaveAPI = {
       body: JSON.stringify(leaveData),
     }),
   
+  // Admin endpoints
+  getAll: () => apiCall('/leaves'),
+  
+  getByEmployee: (employeeId) => 
+    apiCall(`/leaves/employee/${employeeId}`),
+  
   approve: (leaveId) => 
     apiCall(`/leaves/${leaveId}/approve`, {
       method: 'PUT',
     }),
   
-  reject: (leaveId) => 
+  reject: (leaveId, adminComment) => 
     apiCall(`/leaves/${leaveId}/reject`, {
       method: 'PUT',
+      body: JSON.stringify({ adminComment }),
     }),
 }
 
@@ -159,6 +182,34 @@ export const profileAPI = {
     }),
 }
 
+// Salary/Payroll APIs
+export const salaryAPI = {
+  // Employee endpoint
+  getMySalary: () => apiCall('/salaries/self'),
+  
+  // Admin endpoints
+  getAll: () => apiCall('/salaries'),
+  
+  getById: (id) => apiCall(`/salaries/${id}`),
+  
+  create: (salaryData) => 
+    apiCall('/salaries', {
+      method: 'POST',
+      body: JSON.stringify(salaryData),
+    }),
+  
+  update: (id, salaryData) => 
+    apiCall(`/salaries/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(salaryData),
+    }),
+  
+  delete: (id) => 
+    apiCall(`/salaries/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
 export default {
   authAPI,
   employeeAPI,
@@ -167,4 +218,5 @@ export default {
   dashboardAPI,
   companyAPI,
   profileAPI,
+  salaryAPI,
 }

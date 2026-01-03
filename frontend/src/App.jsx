@@ -12,6 +12,12 @@ import Settings from './components/Settings'
 import Profile from './components/Profile'
 import SignIn from './components/SignIn'
 import SignUp from './components/SignUp'
+// Employee Portal Components
+import EmployeeNavbar from './components/employee/EmployeeNavbar'
+import EmployeeDashboard from './components/employee/EmployeeDashboard'
+import EmployeeAttendance from './components/employee/EmployeeAttendance'
+import EmployeeTimeOff from './components/employee/EmployeeTimeOff'
+import EmployeePayroll from './components/employee/EmployeePayroll'
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard')
@@ -33,26 +39,44 @@ function App() {
     }
   }
 
+  // Render view based on user role
   const renderActiveView = () => {
-    switch(activeView) {
-      case 'dashboard':
-        return <Dashboard />
-      case 'employees':
-        return <EmployeeManagement />
-      case 'attendance':
-        return <AttendanceTracking />
-      case 'timeoff':
-        return <TimeOff userRole={user.role} />
-      case 'payroll':
-        return <PayrollSystem />
-      case 'reports':
-        return <Reports />
-      case 'settings':
-        return <Settings />
-      case 'profile':
-        return <Profile user={user} />
-      default:
-        return <Dashboard />
+    const isEmployee = user?.role === 'EMPLOYEE'
+    
+    if (isEmployee) {
+      // Employee Portal Views - Only Dashboard, Attendance, and Time Off
+      switch(activeView) {
+        case 'dashboard':
+          return <EmployeeDashboard user={user} />
+        case 'attendance':
+          return <EmployeeAttendance user={user} />
+        case 'timeoff':
+          return <EmployeeTimeOff user={user} />
+        default:
+          return <EmployeeDashboard user={user} />
+      }
+    } else {
+      // Admin Portal Views
+      switch(activeView) {
+        case 'dashboard':
+          return <Dashboard />
+        case 'employees':
+          return <EmployeeManagement />
+        case 'attendance':
+          return <AttendanceTracking />
+        case 'timeoff':
+          return <TimeOff userRole={user.role} />
+        case 'payroll':
+          return <PayrollSystem />
+        case 'reports':
+          return <Reports />
+        case 'settings':
+          return <Settings />
+        case 'profile':
+          return <Profile user={user} />
+        default:
+          return <Dashboard />
+      }
     }
   }
 
@@ -161,7 +185,8 @@ function App() {
     setIsAuthenticated(false)
     setUser(null)
     setAuthPage('signin')
-    localStorage.removeItem('authToken')
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
   }
 
   if (!isAuthenticated) {
@@ -181,6 +206,33 @@ function App() {
       </div>
     )
   }
+
+  // Check if user is employee
+  const isEmployee = user?.role === 'EMPLOYEE'
+
+  return (
+    <div className="app">
+      {isEmployee ? (
+        <EmployeeNavbar 
+          user={user}
+          activeView={activeView}
+          setActiveView={setActiveView}
+          onLogout={handleLogout}
+        />
+      ) : (
+        <Navbar 
+          user={user} 
+          activeTab={activeTab}
+          setActiveTab={handleTabChange}
+          setActiveView={setActiveView}
+          onLogout={handleLogout}
+        />
+      )}
+      <div className="content-area">
+        {renderActiveView()}
+      </div>
+    </div>
+  )
 
   return (
     <div className="app">
