@@ -65,10 +65,13 @@ export const loginUser = async (req, res) => {
 
     // Compare password
     console.log("Comparing passwords...");
+    console.log("Stored password hash (first 20 chars):", user.password.substring(0, 20));
+    console.log("Entered password length:", password.length);
     const isPasswordMatch = await comparePassword(password, user.password);
     console.log("Password match:", isPasswordMatch);
 
     if (!isPasswordMatch) {
+      console.log("Login failed for user:", user.email, "- password mismatch");
       return res.status(401).json({
         success: false,
         message: "Invalid credentials"
@@ -276,6 +279,180 @@ export const logoutUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Logged out successfully"
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+/**
+ * @desc    Forgot Password - Send reset link
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide your email address"
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this email address"
+      });
+    }
+
+    // Generate reset token
+    const crypto = await import('crypto');
+    const resetToken = crypto.default.randomBytes(32).toString('hex');
+
+    // Hash token and set to user
+    const hashedToken = crypto.default.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 30 * 60 * 1000; // 30 minutes
+
+    await user.save();
+
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+
+    // Send email
+    try {
+      const { sendEmail } = await import('../utils/sendEmail.js');
+      await sendEmail({
+        to: user.email,
+        subject: 'Password Reset Request',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background-color: #667eea; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+              .content { background-color: white; padding: 30px; border: 1px solid #ddd; }
+              .button { display: inline-block; padding: 12px 24px; background-color: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+              .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Password Reset Request</h1>
+              </div>
+              <div class="content">
+                <p>Hello,</p>
+                <p>You have requested to reset your password for your OdooXGCET account.</p>
+                <p>Please click the button below to reset your password:</p>
+                <a href="${resetUrl}" class="button">Reset Password</a>
+                <p>Or copy and paste this link in your browser:</p>
+                <p>${resetUrl}</p>
+                <p><strong>This link will expire in 30 minutes.</strong></p>
+                <p>If you didn't request this, please ignore this email and your password will remain unchanged.</p>
+              </div>
+              <div class="footer">
+                <p>This is an automated email. Please do not reply.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Password reset link has been sent to your email"
+      });
+    } catch (emailError) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
+
+      console.error('Email error:', emailError);
+      return res.status(500).json({
+        success: false,
+        message: "Error sending email. Please try again later."
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+/**
+ * @desc    Reset Password
+ * @route   POST /api/auth/reset-password/:resetToken
+ * @access  Public
+ */
+export const resetPassword = async (req, res) => {
+  try {
+    const { resetToken } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a new password"
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long"
+      });
+    }
+
+    // Hash token from params
+    const crypto = await import('crypto');
+    const hashedToken = crypto.default.createHash('sha256').update(resetToken).digest('hex');
+
+    // Find user by token and check if token is not expired
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset token"
+      });
+    }
+
+    // Set new password
+    const hashedNewPassword = await hashPassword(newPassword);
+    console.log('Hashing new password for reset');
+    
+    user.password = hashedNewPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    user.isFirstLogin = false;
+
+    await user.save({ validateBeforeSave: false });
+    
+    console.log('Password reset successful for user:', user.email);
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully. You can now login with your new password."
     });
   } catch (error) {
     console.error(error);

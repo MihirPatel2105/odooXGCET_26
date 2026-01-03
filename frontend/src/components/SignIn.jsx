@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import '../styles/Auth.css'
+import axios from 'axios'
 
 export default function SignIn({ onSignIn, onSwitchToSignUp }) {
   const [showPassword, setShowPassword] = useState(false)
@@ -9,6 +10,11 @@ export default function SignIn({ onSignIn, onSwitchToSignUp }) {
   })
   const [errors, setErrors] = useState({})
   const [inputType, setInputType] = useState('email')
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('')
+  const [forgotPasswordError, setForgotPasswordError] = useState('')
+  const [isSubmittingForgotPassword, setIsSubmittingForgotPassword] = useState(false)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -65,6 +71,49 @@ export default function SignIn({ onSignIn, onSwitchToSignUp }) {
     if (errors.identifier) {
       setErrors(prev => ({ ...prev, identifier: '' }))
     }
+  }
+
+  const handleForgotPasswordClick = (e) => {
+    e.preventDefault()
+    setShowForgotPasswordModal(true)
+    setForgotPasswordEmail('')
+    setForgotPasswordMessage('')
+    setForgotPasswordError('')
+  }
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault()
+    setForgotPasswordError('')
+    setForgotPasswordMessage('')
+    
+    if (!forgotPasswordEmail || !forgotPasswordEmail.includes('@')) {
+      setForgotPasswordError('Please enter a valid email address')
+      return
+    }
+
+    setIsSubmittingForgotPassword(true)
+
+    try {
+      const response = await axios.post('http://localhost:4000/api/auth/forgot-password', {
+        email: forgotPasswordEmail
+      })
+
+      setForgotPasswordMessage(response.data.message || 'Password reset link has been sent to your email')
+      setForgotPasswordEmail('')
+    } catch (error) {
+      setForgotPasswordError(
+        error.response?.data?.message || 'Failed to send reset link. Please try again.'
+      )
+    } finally {
+      setIsSubmittingForgotPassword(false)
+    }
+  }
+
+  const closeForgotPasswordModal = () => {
+    setShowForgotPasswordModal(false)
+    setForgotPasswordEmail('')
+    setForgotPasswordMessage('')
+    setForgotPasswordError('')
   }
 
   return (
@@ -144,7 +193,7 @@ export default function SignIn({ onSignIn, onSwitchToSignUp }) {
               <input type="checkbox" />
               <span>Remember me</span>
             </label>
-            <a href="#" className="forgot-password">Forgot password?</a>
+            <a href="#" className="forgot-password" onClick={handleForgotPasswordClick}>Forgot password?</a>
           </div>
 
           {/* Submit Button */}
@@ -156,6 +205,71 @@ export default function SignIn({ onSignIn, onSwitchToSignUp }) {
           </p>
         </form>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPasswordModal && (
+        <div className="modal-overlay" onClick={closeForgotPasswordModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Forgot Password</h2>
+              <button className="modal-close" onClick={closeForgotPasswordModal}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              {forgotPasswordMessage ? (
+                <div className="success-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <p>{forgotPasswordMessage}</p>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPasswordSubmit}>
+                  <p className="modal-description">
+                    Enter your registered email address and we'll send you a link to reset your password.
+                  </p>
+                  <div className="form-group">
+                    <label htmlFor="forgotPasswordEmail">Email Address</label>
+                    <input
+                      type="email"
+                      id="forgotPasswordEmail"
+                      value={forgotPasswordEmail}
+                      onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className={forgotPasswordError ? 'input-error' : ''}
+                      disabled={isSubmittingForgotPassword}
+                    />
+                    {forgotPasswordError && (
+                      <span className="error-message">{forgotPasswordError}</span>
+                    )}
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={closeForgotPasswordModal}
+                      disabled={isSubmittingForgotPassword}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={isSubmittingForgotPassword}
+                    >
+                      {isSubmittingForgotPassword ? 'Sending...' : 'Send Reset Link'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
