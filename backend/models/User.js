@@ -1,4 +1,8 @@
 import mongoose from "mongoose";
+
+// Email validation regex
+const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 const userSchema = new mongoose.Schema({
     loginId: {
         type: String,
@@ -8,11 +12,21 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         unique: true,
-        required: true
+        required: [true, 'Email is required'],
+        lowercase: true,
+        trim: true,
+        validate: {
+            validator: function(email) {
+                return emailRegex.test(email);
+            },
+            message: 'Please provide a valid email address'
+        },
+        maxlength: [254, 'Email cannot exceed 254 characters']
     },
     password: {
         type: String,
-        required: true
+        required: [true, 'Password is required'],
+        minlength: [8, 'Password must be at least 8 characters long']
     },
     role: {
         type: String,

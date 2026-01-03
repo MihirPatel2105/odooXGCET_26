@@ -3,6 +3,7 @@ import Employee from "../models/Employee.js";
 import generateToken from "../utils/generateToken.js";
 import { hashPassword, comparePassword } from "../utils/hashPassword.js";
 import { sendPasswordResetEmail } from "../utils/sendEmail.js";
+import { validatePassword, validateEmail } from "../utils/validators.js";
 import crypto from "crypto";
 
 /**
@@ -166,6 +167,15 @@ export const changePassword = async (req, res) => {
       });
     }
 
+    // Validate new password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: passwordValidation.message
+      });
+    }
+
     // Fetch user from database (with password)
     const user = await User.findById(req.user._id);
 
@@ -222,6 +232,15 @@ export const firstLoginReset = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Please provide new password"
+      });
+    }
+
+    // Validate new password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: passwordValidation.message
       });
     }
 
@@ -301,6 +320,15 @@ export const forgotPassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Please provide email address"
+      });
+    }
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: emailValidation.message
       });
     }
 
@@ -384,10 +412,12 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    // Validate new password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters long"
+        message: passwordValidation.message
       });
     }
 

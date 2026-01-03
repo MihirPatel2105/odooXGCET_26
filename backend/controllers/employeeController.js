@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Company from "../models/Company.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateLoginId, generatePassword } from "../utils/generateLoginId.js";
+import { validateEmail } from "../utils/validators.js";
 // import { sendEmployeeCredentialsEmail } from "../utils/sendEmail.js"; // Optional - email feature
 
 /* =========================================
@@ -26,6 +27,15 @@ export const createEmployee = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Full name and email are required"
+      });
+    }
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: emailValidation.message
       });
     }
 
