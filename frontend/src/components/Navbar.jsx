@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const Navbar = ({ user, activeTab, setActiveTab, setActiveView, onLogout }) => {
+const Navbar = ({ user, company, activeTab, setActiveTab, setActiveView, onLogout }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showCheckInOut, setShowCheckInOut] = useState(false)
   const [userStatus, setUserStatus] = useState('checked-in') // 'checked-in', 'on-leave', 'absent'
@@ -43,7 +43,7 @@ const Navbar = ({ user, activeTab, setActiveTab, setActiveView, onLogout }) => {
         {/* Company Logo */}
         <div className="navbar-logo">
           <div className="company-logo">
-            <span className="logo-text">Company Logo</span>
+            <span className="logo-text">{company?.companyName || 'Company Logo'}</span>
           </div>
         </div>
 
@@ -191,7 +191,7 @@ const Navbar = ({ user, activeTab, setActiveTab, setActiveView, onLogout }) => {
                     <span className="menu-icon">👤</span>
                     <span>My Profile</span>
                   </button>
-                  <button className="menu-item">
+                  <button className="menu-item" onClick={() => { setActiveView('changePassword'); setShowUserMenu(false); }}>
                     <span className="menu-icon">🔒</span>
                     <span>Change Password</span>
                   </button>

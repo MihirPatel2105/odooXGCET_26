@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './EmployeeStyles.css'
 
-const EmployeeNavbar = ({ user, activeView, setActiveView, onLogout }) => {
+const EmployeeNavbar = ({ user, company, activeView, setActiveView, onLogout }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   const navItems = [
@@ -18,7 +18,7 @@ const EmployeeNavbar = ({ user, activeView, setActiveView, onLogout }) => {
         <div className="navbar-brand">
           <div className="brand-logo">
             <span className="logo-icon">📋</span>
-            <span className="logo-text">Dayflow+</span>
+            <span className="logo-text">{company?.companyName || 'Dayflow+'}</span>
           </div>
           <span className="brand-subtitle">Employee Portal</span>
         </div>
@@ -68,6 +68,13 @@ const EmployeeNavbar = ({ user, activeView, setActiveView, onLogout }) => {
                   </div>
                 </div>
                 <div className="profile-menu-divider"></div>
+                <button 
+                  className="profile-menu-item"
+                  onClick={() => { setActiveView('changePassword'); setShowProfileMenu(false); }}
+                >
+                  <span className="menu-icon">🔒</span>
+                  Change Password
+                </button>
                 <button 
                   className="profile-menu-item danger"
                   onClick={onLogout}

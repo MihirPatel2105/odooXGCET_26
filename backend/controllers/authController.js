@@ -2,8 +2,7 @@ import User from "../models/User.js";
 import Employee from "../models/Employee.js";
 import generateToken from "../utils/generateToken.js";
 import { hashPassword, comparePassword } from "../utils/hashPassword.js";
-import { sendPasswordResetEmail } from "../utils/sendEmail.js";
-import { validatePassword, validateEmail } from "../utils/validators.js";
+import { sendPasswordResetEmail, sendPasswordChangeEmail } from "../utils/sendEmail.js";
 import crypto from "crypto";
 
 /**
@@ -167,15 +166,6 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // Validate new password strength
-    const passwordValidation = validatePassword(newPassword);
-    if (!passwordValidation.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: passwordValidation.message
-      });
-    }
-
     // Fetch user from database (with password)
     const user = await User.findById(req.user._id);
 
@@ -205,6 +195,17 @@ export const changePassword = async (req, res) => {
     // Save user
     await user.save();
 
+    // Get employee name and send email notification
+    const employee = await Employee.findOne({ userId: user._id });
+    const userName = employee ? employee.fullName : 'User';
+
+    try {
+      await sendPasswordChangeEmail(user.email, userName);
+      console.log('✅ Password change notification sent to:', user.email);
+    } catch (emailError) {
+      console.error('❌ Failed to send password change notification:', emailError.message);
+    }
+
     res.status(200).json({
       success: true,
       message: "Password updated successfully"
@@ -232,15 +233,6 @@ export const firstLoginReset = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Please provide new password"
-      });
-    }
-
-    // Validate new password strength
-    const passwordValidation = validatePassword(newPassword);
-    if (!passwordValidation.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: passwordValidation.message
       });
     }
 
@@ -320,15 +312,6 @@ export const forgotPassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Please provide email address"
-      });
-    }
-
-    // Validate email format
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: emailValidation.message
       });
     }
 
@@ -412,12 +395,10 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // Validate new password strength
-    const passwordValidation = validatePassword(newPassword);
-    if (!passwordValidation.isValid) {
+    if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: passwordValidation.message
+        message: "Password must be at least 6 characters long"
       });
     }
 

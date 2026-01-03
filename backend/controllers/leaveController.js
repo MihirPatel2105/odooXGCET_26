@@ -1,5 +1,6 @@
 import Leave from "../models/Leave.js";
 import Employee from "../models/Employee.js";
+import User from "../models/User.js";
 
 /* =========================================
    APPLY FOR LEAVE (EMPLOYEE)
@@ -131,12 +132,30 @@ export const getSelfLeaves = async (req, res) => {
 ========================================= */
 export const getAllLeaves = async (req, res) => {
     try {
+        // Get logged-in user's company
+        const loggedInUser = await User.findById(req.user._id);
+        if (!loggedInUser || !loggedInUser.companyId) {
+            return res.status(400).json({
+                success: false,
+                message: "User company not found"
+            });
+        }
+
+        // Get all employees from the same company
+        const companyEmployees = await Employee.find({ 
+            companyId: loggedInUser.companyId 
+        }).select('_id');
+        
+        const employeeIds = companyEmployees.map(emp => emp._id);
+
         // Get query parameters for filtering
         const { status, employeeId, leaveType, year } = req.query;
 
-        let query = {};
+        let query = {
+            employeeId: { $in: employeeIds } // Only show leaves from same company
+        };
 
-        // Filter by employee
+        // Filter by specific employee
         if (employeeId) {
             query.employeeId = employeeId;
         }
