@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Employee from "../models/Employee.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateToken } from "../utils/generateToken.js";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 /* =========================================
    COMPANY SIGNUP/REGISTRATION
@@ -74,11 +75,34 @@ export const signupCompany = async (req, res) => {
         // Hash password
         const hashedPassword = await hashPassword(password);
 
+        // Upload logo to Cloudinary if provided
+        let logoUrl = "";
+        if (logo) {
+            try {
+                // Check if it's already a Cloudinary URL
+                if (logo.includes('cloudinary.com')) {
+                    logoUrl = logo;
+                } else {
+                    // Upload base64 image to Cloudinary
+                    const uploadResult = await uploadToCloudinary(
+                        logo,
+                        "HRMS/company-logos",
+                        "image"
+                    );
+                    logoUrl = uploadResult.url;
+                }
+            } catch (uploadError) {
+                console.error("Logo upload failed:", uploadError);
+                // Continue without logo instead of failing entire signup
+                logoUrl = "";
+            }
+        }
+
         // Create company
         const company = await Company.create({
             companyName,
             companyCode: companyCode.toUpperCase(),
-            logo: logo || "",
+            logo: logoUrl,
             email: email.toLowerCase(),
             phone
         });

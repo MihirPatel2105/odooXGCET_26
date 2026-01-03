@@ -27,6 +27,15 @@ export const createEmployee = async (req, res) => {
       });
     }
 
+    // Get the logged-in user's company ID
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -53,19 +62,21 @@ export const createEmployee = async (req, res) => {
     // Hash the auto-generated password
     const hashedPassword = await hashPassword(autoPassword);
     
-    // Create user login
+    // Create user login with company ID
     const user = await User.create({
       loginId,
       email,
       password: hashedPassword,
       role: "EMPLOYEE",
+      companyId: loggedInUser.companyId,
       isFirstLogin: true, // Force password change on first login
       isActive: true
     });
 
-    // Create employee profile
+    // Create employee profile with company ID
     const employee = await Employee.create({
       userId: user._id,
+      companyId: loggedInUser.companyId,
       employeeCode: loginId,
       fullName,
       phone,
@@ -104,7 +115,17 @@ export const createEmployee = async (req, res) => {
 ========================================= */
 export const getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find()
+    // Get the logged-in user's company ID
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
+    // Filter employees by company ID
+    const employees = await Employee.find({ companyId: loggedInUser.companyId })
       .populate("userId", "email role loginId isActive")
       .sort({ createdAt: -1 });
 
@@ -127,8 +148,20 @@ export const getAllEmployees = async (req, res) => {
 ========================================= */
 export const getEmployeeById = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id)
-      .populate("userId", "email role loginId isActive");
+    // Get the logged-in user's company ID
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
+    // Find employee by ID and company ID
+    const employee = await Employee.findOne({
+      _id: req.params.id,
+      companyId: loggedInUser.companyId
+    }).populate("userId", "email role loginId isActive");
 
     if (!employee) {
       return res.status(404).json({
@@ -184,7 +217,20 @@ export const getSelfEmployee = async (req, res) => {
 ========================================= */
 export const updateEmployee = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id);
+    // Get the logged-in user's company ID
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
+    // Find employee by ID and company ID
+    const employee = await Employee.findOne({
+      _id: req.params.id,
+      companyId: loggedInUser.companyId
+    });
 
     if (!employee) {
       return res.status(404).json({
@@ -234,7 +280,20 @@ export const updateEmployee = async (req, res) => {
 ========================================= */
 export const disableEmployee = async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id);
+    // Get the logged-in user's company ID
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
+    // Find employee by ID and company ID
+    const employee = await Employee.findOne({
+      _id: req.params.id,
+      companyId: loggedInUser.companyId
+    });
 
     if (!employee) {
       return res.status(404).json({
@@ -273,8 +332,20 @@ export const getEmployeesDashboard = async (req, res) => {
     const Attendance = (await import("../models/Attendance.js")).default;
     const Leave = (await import("../models/Leave.js")).default;
 
-    // Get all active employees
-    const employees = await Employee.find({ status: "ACTIVE" })
+    // Get the logged-in user's company ID
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
+    // Get all active employees from the same company
+    const employees = await Employee.find({ 
+      status: "ACTIVE",
+      companyId: loggedInUser.companyId 
+    })
       .populate("userId", "email loginId")
       .select("employeeCode fullName profileImage designation department")
       .lean();
