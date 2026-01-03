@@ -12,6 +12,8 @@ export const loginUser = async (req, res) => {
   try {
     const { loginIdOrEmail, password } = req.body;
 
+    console.log("Login attempt:", { loginIdOrEmail, passwordLength: password?.length });
+
     // Validation
     if (!loginIdOrEmail || !password) {
       return res.status(400).json({
@@ -24,8 +26,15 @@ export const loginUser = async (req, res) => {
 
     // First, try to find user by email
     user = await User.findOne({ email: loginIdOrEmail.toLowerCase() });
+    console.log("User found by email:", user ? "Yes" : "No");
 
-    // If not found by email, try to find employee by employeeCode and get user
+    // If not found by email, try to find by loginId
+    if (!user) {
+      user = await User.findOne({ loginId: loginIdOrEmail.toUpperCase() });
+      console.log("User found by loginId:", user ? "Yes" : "No");
+    }
+
+    // If still not found, try to find employee by employeeCode and get user
     if (!user) {
       const employee = await Employee.findOne({ 
         employeeCode: loginIdOrEmail.toUpperCase() 
@@ -33,11 +42,13 @@ export const loginUser = async (req, res) => {
 
       if (employee && employee.userId) {
         user = await User.findById(employee.userId);
+        console.log("User found via employee:", user ? "Yes" : "No");
       }
     }
 
     // Check if user exists
     if (!user) {
+      console.log("User not found");
       return res.status(401).json({
         success: false,
         message: "Invalid credentials"
@@ -53,7 +64,9 @@ export const loginUser = async (req, res) => {
     }
 
     // Compare password
+    console.log("Comparing passwords...");
     const isPasswordMatch = await comparePassword(password, user.password);
+    console.log("Password match:", isPasswordMatch);
 
     if (!isPasswordMatch) {
       return res.status(401).json({

@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
         enum: ["EMPLOYEE", "ADMIN"],
         default: "EMPLOYEE"
     },
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Company"
+    },
     isFirstLogin: {
         type: Boolean,
         default: true

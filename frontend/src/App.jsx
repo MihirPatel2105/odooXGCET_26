@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './App.css'
+import { authAPI } from './services/api'
 import Navbar from './components/Navbar'
 import Dashboard from './components/Dashboard'
 import EmployeeManagement from './components/EmployeeManagement'
@@ -16,11 +17,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('employees') // For navbar tabs
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authPage, setAuthPage] = useState('signin')
-  const [user, setUser] = useState({
-    name: 'John Smith',
-    role: 'HR Manager',
-    avatar: 'JS'
-  })
+  const [user, setUser] = useState(null)
 
   // Handle tab changes from navbar
   const handleTabChange = (tab) => {
@@ -56,29 +53,106 @@ function App() {
     }
   }
 
-  const handleSignIn = (credentials) => {
-    console.log('User signed in:', credentials)
-    setUser({
-      name: 'John Smith',
-      role: 'HR Manager',
-      avatar: 'JS'
-    })
-    setIsAuthenticated(true)
+  const handleSignIn = async (credentials) => {
+    try {
+      // Format credentials for backend
+      const loginData = {
+        loginIdOrEmail: credentials.identifier,
+        password: credentials.password
+      }
+
+      const response = await authAPI.signIn(loginData)
+      if (response.success && response.user) {
+        // Get name from employee or user data
+        const userName = response.employee?.fullName || response.user.email.split('@')[0]
+        setUser({
+          name: userName,
+          role: response.user.role,
+          avatar: userName.split(' ').map(n => n[0]).join('').toUpperCase()
+        })
+        setIsAuthenticated(true)
+        // Store token if provided
+        if (response.token) {
+          localStorage.setItem('authToken', response.token)
+        }
+      } else {
+        alert(response.message || 'Invalid credentials')
+      }
+    } catch (error) {
+      console.error('Sign in error:', error)
+      alert('Sign in failed. Please check your credentials.')
+    }
   }
 
-  const handleSignUp = (formData) => {
-    console.log('User signed up:', formData)
-    setUser({
-      name: formData.name,
-      role: 'Employee',
-      avatar: formData.name.split(' ').map(n => n[0]).join('')
+  const handleSignUp = async (formData) => {
+    try {
+      // Generate loginId from name and company
+      const nameParts = formData.name.trim().split(' ')
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts[nameParts.length - 1] || ''
+      const companyCode = formData.companyName.toUpperCase().replace(/\s+/g, '_').substring(0, 2)
+      const year = new Date().getFullYear()
+      const loginId = `${companyCode}${firstName.substring(0, 2).toUpperCase()}${lastName.substring(0, 2).toUpperCase()}${year}001`
+
+      // Format data for backend
+      const signupData = {
+        companyName: formData.companyName,
+        companyCode: formData.companyName.toUpperCase().replace(/\s+/g, '_'), // Generate code from name
+        logo: formData.photo ? await convertToBase64(formData.photo) : '',
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        loginId: loginId
+      }
+
+      const response = await authAPI.signUp(signupData)
+      if (response.success) {
+        // Backend returns data.user and data.token
+        const userData = response.data?.user || response.user
+        const employeeData = response.data?.employee || response.employee
+        const token = response.data?.token || response.token
+        
+        if (userData) {
+          const userName = employeeData?.fullName || formData.name
+          setUser({
+            name: userName,
+            role: userData.role || 'Admin',
+            avatar: userName.split(' ').map(n => n[0]).join('').toUpperCase()
+          })
+          setIsAuthenticated(true)
+          // Store token if provided
+          if (token) {
+            localStorage.setItem('authToken', token)
+          }
+        } else {
+          alert(response.message || 'Registration failed')
+        }
+      } else {
+        alert(response.message || 'Registration failed')
+      }
+    } catch (error) {
+      console.error('Sign up error:', error)
+      alert('Sign up failed. Please try again.')
+    }
+  }
+
+  // Helper function to convert file to base64
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = error => reject(error)
     })
-    setIsAuthenticated(true)
   }
 
   const handleLogout = () => {
     setIsAuthenticated(false)
+    setUser(null)
     setAuthPage('signin')
+    localStorage.removeItem('authToken')
   }
 
   if (!isAuthenticated) {
@@ -112,6 +186,6 @@ function App() {
       </div>
     </div>
   )
-}
+};
 
 export default App

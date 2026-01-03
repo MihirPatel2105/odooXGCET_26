@@ -18,11 +18,12 @@ export const signupCompany = async (req, res) => {
             email, 
             phone, 
             password, 
-            confirmPassword 
+            confirmPassword,
+            loginId 
         } = req.body;
 
         // Validation
-        if (!companyName || !companyCode || !name || !email || !phone || !password || !confirmPassword) {
+        if (!companyName || !companyCode || !name || !email || !phone || !password || !confirmPassword || !loginId) {
             return res.status(400).json({
                 success: false,
                 message: "Please provide all required fields"
@@ -84,6 +85,7 @@ export const signupCompany = async (req, res) => {
 
         // Create admin user
         const user = await User.create({
+            loginId: loginId,
             email: email.toLowerCase(),
             password: hashedPassword,
             role: "ADMIN",
