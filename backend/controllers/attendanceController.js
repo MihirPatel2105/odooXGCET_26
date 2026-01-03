@@ -1,5 +1,6 @@
 import Attendance from "../models/Attendance.js";
 import Employee from "../models/Employee.js";
+import User from "../models/User.js";
 
 /* =========================================
    API 1: CHECK-IN
@@ -251,12 +252,30 @@ export const getSelfAttendance = async (req, res) => {
 ========================================= */
 export const getAllAttendance = async (req, res) => {
   try {
+    // Get logged-in user's company
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
+    // Get all employees from the same company
+    const companyEmployees = await Employee.find({ 
+      companyId: loggedInUser.companyId 
+    }).select('_id');
+    
+    const employeeIds = companyEmployees.map(emp => emp._id);
+
     // Get query parameters for filtering
     const { month, year, employeeId } = req.query;
 
-    let query = {};
+    let query = {
+      employeeId: { $in: employeeIds } // Only show attendance from same company
+    };
 
-    // Filter by employee if provided
+    // Filter by specific employee if provided
     if (employeeId) {
       query.employeeId = employeeId;
     }
@@ -295,7 +314,22 @@ export const getAllAttendance = async (req, res) => {
    API 5: DATE-WISE ATTENDANCE FILTER (ADMIN)
 ========================================= */
 export const getAttendanceByDate = async (req, res) => {
-  try {
+  try {\n    // Get logged-in user's company
+    const loggedInUser = await User.findById(req.user._id);
+    if (!loggedInUser || !loggedInUser.companyId) {
+      return res.status(400).json({
+        success: false,
+        message: "User company not found"
+      });
+    }
+
+    // Get all employees from the same company
+    const companyEmployees = await Employee.find({ 
+      companyId: loggedInUser.companyId 
+    }).select('_id');
+    
+    const employeeIds = companyEmployees.map(emp => emp._id);
+
     const { date } = req.params;
 
     if (!date) {
@@ -312,9 +346,10 @@ export const getAttendanceByDate = async (req, res) => {
     const nextDay = new Date(searchDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
-    // Fetch attendance for the specific date
+    // Fetch attendance for the specific date and company
     const attendance = await Attendance.find({
-      date: { $gte: searchDate, $lt: nextDay }
+      date: { $gte: searchDate, $lt: nextDay },
+      employeeId: { $in: employeeIds } // Only show attendance from same company
     }).populate({
       path: "employeeId",
       select: "employeeCode fullName department designation"
