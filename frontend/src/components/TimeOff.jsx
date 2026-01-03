@@ -120,19 +120,11 @@ const TimeOff = ({ userRole = 'HR Manager' }) => {
       {/* Main Content */}
       {!loading && !error && (
         <>
-      {/* Header Section */}
-      <div className="timeoff-header">
-        <div className="timeoff-header-left">
-          <h2 className="timeoff-title">Time Off</h2>
-          <p className="timeoff-subtitle">Allocation</p>
-        </div>
-      </div>
+     
 
       {/* Toolbar */}
       <div className="timeoff-toolbar">
-        <button className="btn-new-timeoff" onClick={() => setShowNewModal(true)}>
-          NEW
-        </button>
+        
         <div className="timeoff-search-container">
           <input
             type="text"
@@ -144,6 +136,7 @@ const TimeOff = ({ userRole = 'HR Manager' }) => {
         </div>
       </div>
 
+     
       {/* Time Off Table */}
       <div className="timeoff-table-container">
         <table className="timeoff-table">
