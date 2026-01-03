@@ -4,6 +4,7 @@ import Employee from "../models/Employee.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateToken } from "../utils/generateToken.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import { sendAdminSignupEmail } from "../utils/sendEmail.js";
 
 /* =========================================
    COMPANY SIGNUP/REGISTRATION
@@ -139,9 +140,24 @@ export const signupCompany = async (req, res) => {
         // Generate token
         const token = generateToken(user._id);
 
+        // Send email with login credentials
+        try {
+            await sendAdminSignupEmail(
+                email.toLowerCase(),
+                name,
+                loginId,
+                password,
+                companyName
+            );
+            console.log('Admin signup email sent successfully to:', email);
+        } catch (emailError) {
+            console.error('Failed to send signup email:', emailError);
+            // Don't fail the signup if email fails, just log the error
+        }
+
         res.status(201).json({
             success: true,
-            message: "Company registered successfully",
+            message: "Company registered successfully. Login credentials have been sent to your email.",
             data: {
                 company: {
                     _id: company._id,

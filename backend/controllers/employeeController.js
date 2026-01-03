@@ -1,7 +1,9 @@
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
+import Company from "../models/Company.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateLoginId, generatePassword } from "../utils/generateLoginId.js";
+import { sendEmployeeCredentialsEmail } from "../utils/sendEmail.js";
 
 /* =========================================
    CREATE EMPLOYEE (ADMIN)
@@ -90,6 +92,25 @@ export const createEmployee = async (req, res) => {
     // Populate user data
     await employee.populate("userId", "email role loginId");
 
+    // Get company name for email
+    const company = await Company.findById(loggedInUser.companyId);
+    const companyName = company ? company.companyName : "Your Company";
+
+    // Send email with login credentials to employee
+    try {
+      await sendEmployeeCredentialsEmail(
+        email,
+        fullName,
+        loginId,
+        autoPassword,
+        companyName
+      );
+      console.log('✅ Employee credentials email sent successfully to:', email);
+    } catch (emailError) {
+      console.error('❌ Failed to send employee credentials email:', emailError.message);
+      // Don't fail the employee creation if email fails, just log the error
+    }
+
     res.status(201).json({
       success: true,
       employee,
@@ -98,7 +119,7 @@ export const createEmployee = async (req, res) => {
         email: email,
         temporaryPassword: autoPassword
       },
-      message: `Employee created successfully. Login ID: ${loginId}. Temporary password has been generated. Employee must change password on first login.`
+      message: `Employee created successfully. Login credentials have been sent to ${email}. Employee must change password on first login.`
     });
 
   } catch (error) {
