@@ -684,3 +684,109 @@ This is an automated email. Please do not reply.
         html
     });
 };
+
+/**
+ * @desc    Send password change confirmation email
+ * @param   {string} email - User email address
+ * @param   {string} name - User name
+ * @returns {Promise}
+ */
+export const sendPasswordChangeEmail = async (email, name) => {
+    const subject = '✅ Password Changed Successfully - HRMS Account';
+    
+    const text = `
+Dear ${name || 'User'},
+
+Your HRMS account password has been changed successfully.
+
+Date & Time: ${new Date().toLocaleString()}
+
+If you made this change, no further action is needed.
+
+If you did NOT change your password, please contact your administrator immediately or use the forgot password feature to secure your account.
+
+Best regards,
+HRMS Security Team
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This is an automated email. Please do not reply.
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Changed Successfully</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">✅ Password Changed Successfully</h1>
+                            <p style="margin: 10px 0 0 0; color: #e0f7f4; font-size: 16px;">Your Account is Secure</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">Dear <strong>${name || 'User'}</strong>,</p>
+                            <p style="margin: 0 0 30px 0; color: #555555; font-size: 15px; line-height: 1.6;">This is to confirm that your HRMS account password has been changed successfully.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #11998e15 0%, #38ef7d15 100%); border-radius: 10px; border-left: 5px solid #11998e; margin: 30px 0;">
+                                <tr>
+                                    <td style="padding: 25px;">
+                                        <p style="margin: 0 0 10px 0; color: #11998e; font-size: 16px; font-weight: 600;">Change Details:</p>
+                                        <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Date & Time:</strong> ${new Date().toLocaleString()}</p>
+                                        <p style="margin: 5px 0; color: #555555; font-size: 14px;"><strong>Account:</strong> ${email}</p>
+                                        <p style="margin: 15px 0 0 0; color: #11998e; font-size: 14px; font-weight: 600;">✓ Password updated successfully</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 10px 0; color: #2e7d32; font-size: 15px; font-weight: 700;">✓ No Action Required</p>
+                                        <p style="margin: 0; color: #2e7d32; font-size: 14px; line-height: 1.6;">If you made this change, you can safely ignore this email. Your account is secure.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffebee; border-radius: 8px; border-left: 4px solid #f44336; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 10px 0; color: #c62828; font-size: 15px; font-weight: 700;">⚠️ Did Not Make This Change?</p>
+                                        <p style="margin: 0 0 15px 0; color: #c62828; font-size: 14px; line-height: 1.6;">If you did NOT change your password, your account may be compromised. Please take immediate action:</p>
+                                        <ul style="margin: 0; padding-left: 20px; color: #c62828; font-size: 14px;">
+                                            <li style="margin: 5px 0;">Contact your system administrator immediately</li>
+                                            <li style="margin: 5px 0;">Use forgot password to reset your password</li>
+                                            <li style="margin: 5px 0;">Review recent account activity</li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin: 30px 0 0 0; color: #555555; font-size: 15px; line-height: 1.6;">Best regards,<br><strong style="color: #11998e;">HRMS Security Team</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="margin: 0 0 5px 0; color: #6c757d; font-size: 13px;">This is an automated security notification from HRMS System</p>
+                            <p style="margin: 0; color: #6c757d; font-size: 13px;">Please do not reply to this message</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `.trim();
+
+    await sendEmail({
+        to: email,
+        subject,
+        text,
+        html
+    });
+};
