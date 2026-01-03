@@ -4,6 +4,7 @@ import Employee from "../models/Employee.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateToken } from "../utils/generateToken.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import { sendAdminSignupEmail } from "../utils/sendEmail.js";
 
 /* =========================================
    COMPANY SIGNUP/REGISTRATION
@@ -11,16 +12,16 @@ import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 ========================================= */
 export const signupCompany = async (req, res) => {
     try {
-        const { 
-            companyName, 
-            companyCode, 
-            logo, 
-            name, 
-            email, 
-            phone, 
-            password, 
+        const {
+            companyName,
+            companyCode,
+            logo,
+            name,
+            email,
+            phone,
+            password,
             confirmPassword,
-            loginId 
+            loginId
         } = req.body;
 
         // Validation
@@ -48,7 +49,7 @@ export const signupCompany = async (req, res) => {
         }
 
         // Check if company code already exists
-        const existingCompany = await Company.findOne({ 
+        const existingCompany = await Company.findOne({
             $or: [
                 { companyCode: companyCode.toUpperCase() },
                 { email: email.toLowerCase() }
@@ -138,6 +139,21 @@ export const signupCompany = async (req, res) => {
 
         // Generate token
         const token = generateToken(user._id);
+
+        // Send email with login credentials
+        try {
+            await sendAdminSignupEmail(
+                email.toLowerCase(),
+                name,
+                loginId,
+                password, // Send the plain password before it was hashed
+                companyName
+            );
+            console.log('Admin signup email sent successfully to:', email);
+        } catch (emailError) {
+            console.error('Failed to send signup email:', emailError);
+            // Don't fail the signup if email fails, just log the error
+        }
 
         res.status(201).json({
             success: true,
