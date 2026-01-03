@@ -26,10 +26,14 @@ const Dashboard = () => {
         const transformedEmployees = response.employees.map((emp, index) => ({
           id: emp._id,
           name: emp.fullName || 'N/A',
+          employeeCode: emp.employeeCode || 'N/A',
           department: emp.department || 'N/A',
           position: emp.designation || 'N/A',
-          email: emp.email || 'N/A',
+          email: emp.userId?.email || 'N/A',
           phone: emp.phone || 'N/A',
+          joiningDate: emp.dateOfJoining ? new Date(emp.dateOfJoining).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A',
+          address: emp.address || 'N/A',
+          profileImage: emp.profileImage || null,
           avatar: (emp.fullName || 'NA').split(' ').map(n => n[0]).join('').toUpperCase(),
           status: emp.status === 'ACTIVE' ? 'present' : 'absent',
           color: getRandomColor(index)
@@ -299,6 +303,7 @@ const Dashboard = () => {
                 </div>
                 <div className="employee-detail-info">
                   <h3>{selectedEmployee.name}</h3>
+                  <p className="employee-code">ID: {selectedEmployee.employeeCode}</p>
                   <p className="employee-position">{selectedEmployee.position}</p>
                   <div className="employee-status-badge">
                     <span 
@@ -313,24 +318,50 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="employee-detail-section">
-                <h4>Contact Information</h4>
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{selectedEmployee.email}</span>
+              <div className="employee-details-grid">
+                <div className="employee-detail-section">
+                  <h4>Contact Information</h4>
+                  <div className="detail-row">
+                    <span className="detail-label">📧 Email</span>
+                    <span className="detail-value">{selectedEmployee.email}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">📱 Phone</span>
+                    <span className="detail-value">{selectedEmployee.phone}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">📍 Address</span>
+                    <span className="detail-value">{selectedEmployee.address}</span>
+                  </div>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Phone:</span>
-                  <span className="detail-value">{selectedEmployee.phone}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Department:</span>
-                  <span className="detail-value">{selectedEmployee.department}</span>
+
+                <div className="employee-detail-section">
+                  <h4>Employment Details</h4>
+                  <div className="detail-row">
+                    <span className="detail-label">� Employee Code</span>
+                    <span className="detail-value">{selectedEmployee.employeeCode}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">🏢 Department</span>
+                    <span className="detail-value">{selectedEmployee.department}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">💼 Position</span>
+                    <span className="detail-value">{selectedEmployee.position}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">📅 Joining Date</span>
+                    <span className="detail-value">{selectedEmployee.joiningDate}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">✅ Status</span>
+                    <span className="detail-value">{selectedEmployee.status === 'present' ? 'Active' : 'Inactive'}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="modal-note">
-                <strong>Note:</strong> This is a view-only mode. To edit employee information, 
+                <strong>ℹ️ Note:</strong> This is a view-only mode. To edit employee information, 
                 please navigate to the Employee Management section.
               </div>
             </div>

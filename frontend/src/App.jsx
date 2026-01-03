@@ -9,6 +9,7 @@ import TimeOff from './components/TimeOff'
 import PayrollSystem from './components/PayrollSystem'
 import Reports from './components/Reports'
 import Settings from './components/Settings'
+import Profile from './components/Profile'
 import SignIn from './components/SignIn'
 import SignUp from './components/SignUp'
 
@@ -48,6 +49,8 @@ function App() {
         return <Reports />
       case 'settings':
         return <Settings />
+      case 'profile':
+        return <Profile user={user} />
       default:
         return <Dashboard />
     }
@@ -65,15 +68,21 @@ function App() {
       if (response.success && response.user) {
         // Get name from employee or user data
         const userName = response.employee?.fullName || response.user.email.split('@')[0]
-        setUser({
+        const userData = {
           name: userName,
           role: response.user.role,
-          avatar: userName.split(' ').map(n => n[0]).join('').toUpperCase()
-        })
+          email: response.user.email,
+          loginId: response.user.loginId,
+          companyName: response.user.companyId?.name || 'Company',
+          avatar: userName.split(' ').map(n => n[0]).join('').toUpperCase(),
+          createdAt: response.user.createdAt
+        }
+        setUser(userData)
         setIsAuthenticated(true)
-        // Store token if provided
+        // Store token and user data
         if (response.token) {
           localStorage.setItem('token', response.token)
+          localStorage.setItem('user', JSON.stringify(userData))
         }
       } else {
         alert(response.message || 'Invalid credentials')
@@ -177,8 +186,9 @@ function App() {
     <div className="app">
       <Navbar 
         user={user} 
-        activeTab={activeTab} 
+        activeTab={activeTab}
         setActiveTab={handleTabChange}
+        setActiveView={setActiveView}
         onLogout={handleLogout}
       />
       <div className="content-area">

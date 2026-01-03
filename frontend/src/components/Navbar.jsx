@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const Navbar = ({ user, activeTab, setActiveTab, onLogout }) => {
+const Navbar = ({ user, activeTab, setActiveTab, setActiveView, onLogout }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showCheckInOut, setShowCheckInOut] = useState(false)
   const [userStatus, setUserStatus] = useState('checked-in') // 'checked-in', 'on-leave', 'absent'
@@ -187,7 +187,7 @@ const Navbar = ({ user, activeTab, setActiveTab, onLogout }) => {
                 <div className="menu-divider"></div>
 
                 <div className="menu-items">
-                  <button className="menu-item">
+                  <button className="menu-item" onClick={() => { setActiveView('profile'); setShowUserMenu(false); }}>
                     <span className="menu-icon">👤</span>
                     <span>My Profile</span>
                   </button>
