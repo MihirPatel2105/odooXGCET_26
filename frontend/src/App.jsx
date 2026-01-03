@@ -8,10 +8,14 @@ import AttendanceTracking from './components/AttendanceTracking'
 import PayrollSystem from './components/PayrollSystem'
 import Reports from './components/Reports'
 import Settings from './components/Settings'
+import SignIn from './components/SignIn'
+import SignUp from './components/SignUp'
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard')
-  const [user] = useState({
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authPage, setAuthPage] = useState('signin')
+  const [user, setUser] = useState({
     name: 'John Smith',
     role: 'HR Manager',
     avatar: 'JS'
@@ -36,11 +40,54 @@ function App() {
     }
   }
 
+  const handleSignIn = (credentials) => {
+    console.log('User signed in:', credentials)
+    setUser({
+      name: 'John Smith',
+      role: 'HR Manager',
+      avatar: 'JS'
+    })
+    setIsAuthenticated(true)
+  }
+
+  const handleSignUp = (formData) => {
+    console.log('User signed up:', formData)
+    setUser({
+      name: formData.name,
+      role: 'Employee',
+      avatar: formData.name.split(' ').map(n => n[0]).join('')
+    })
+    setIsAuthenticated(true)
+  }
+
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    setAuthPage('signin')
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="auth-wrapper">
+        {authPage === 'signin' ? (
+          <SignIn 
+            onSignIn={handleSignIn} 
+            onSwitchToSignUp={() => setAuthPage('signup')}
+          />
+        ) : (
+          <SignUp 
+            onSignUp={handleSignUp}
+            onSwitchToSignIn={() => setAuthPage('signin')}
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="app">
-      <Sidebar activeView={activeView} setActiveView={setActiveView} />
+      <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} />
       <div className="main-content">
-        <Navbar user={user} />
+        <Navbar user={user} onLogout={handleLogout} />
         <div className="content-area">
           {renderActiveView()}
         </div>

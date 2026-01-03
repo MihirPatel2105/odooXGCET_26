@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const Sidebar = ({ activeView, setActiveView }) => {
+const Sidebar = ({ activeView, setActiveView, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const menuItems = [

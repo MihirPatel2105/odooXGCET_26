@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const Navbar = ({ user }) => {
+const Navbar = ({ user, onLogout }) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
 
@@ -141,7 +141,7 @@ const Navbar = ({ user }) => {
                     <span className="menu-icon">ℹ️</span>
                     Help & Support
                   </button>
-                  <button className="menu-item logout">
+                  <button className="menu-item logout" onClick={onLogout}>
                     <span className="menu-icon">🚪</span>
                     Sign Out
                   </button>
