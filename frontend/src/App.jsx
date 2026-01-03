@@ -11,11 +11,25 @@ import Settings from './components/Settings'
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState('employees') // For navbar tabs
   const [user] = useState({
     name: 'John Smith',
     role: 'HR Manager',
     avatar: 'JS'
   })
+
+  // Handle tab changes from navbar
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    // Map tab to view
+    if (tab === 'employees') {
+      setActiveView('dashboard') // Show employee dashboard
+    } else if (tab === 'attendance') {
+      setActiveView('attendance')
+    } else if (tab === 'timeoff') {
+      setActiveView('attendance') // Can show time off in attendance view
+    }
+  }
 
   const renderActiveView = () => {
     switch(activeView) {
@@ -40,7 +54,11 @@ function App() {
     <div className="app">
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="main-content">
-        <Navbar user={user} />
+        <Navbar 
+          user={user} 
+          activeTab={activeTab} 
+          setActiveTab={handleTabChange} 
+        />
         <div className="content-area">
           {renderActiveView()}
         </div>
