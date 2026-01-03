@@ -4,6 +4,7 @@ import Navbar from './components/Navbar'
 import Dashboard from './components/Dashboard'
 import EmployeeManagement from './components/EmployeeManagement'
 import AttendanceTracking from './components/AttendanceTracking'
+import TimeOff from './components/TimeOff'
 import PayrollSystem from './components/PayrollSystem'
 import Reports from './components/Reports'
 import Settings from './components/Settings'
@@ -30,7 +31,7 @@ function App() {
     } else if (tab === 'attendance') {
       setActiveView('attendance')
     } else if (tab === 'timeoff') {
-      setActiveView('attendance') // Can show time off in attendance view
+      setActiveView('timeoff') // Show time off view
     }
   }
 
@@ -42,6 +43,8 @@ function App() {
         return <EmployeeManagement />
       case 'attendance':
         return <AttendanceTracking />
+      case 'timeoff':
+        return <TimeOff userRole={user.role} />
       case 'payroll':
         return <PayrollSystem />
       case 'reports':
