@@ -6,8 +6,6 @@ const apiCall = async (endpoint, options = {}) => {
   try {
     // Get token from localStorage
     const token = localStorage.getItem('token')
-    console.log('Making API call to:', endpoint)
-    console.log('Token present:', !!token)
     
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
@@ -18,17 +16,11 @@ const apiCall = async (endpoint, options = {}) => {
       ...options,
     })
 
-    console.log('Response status:', response.status)
-    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('API Error Response:', errorData)
-      throw new Error(errorData.message || `API call failed: ${response.statusText}`)
+      throw new Error(`API call failed: ${response.statusText}`)
     }
 
-    const data = await response.json()
-    console.log('API Response data:', data)
-    return data
+    return await response.json()
   } catch (error) {
     console.error('API Error:', error)
     throw error
@@ -95,6 +87,9 @@ export const attendanceAPI = {
   
   getByEmployee: (employeeId) => 
     apiCall(`/attendance/employee/${employeeId}`),
+  
+  getByDate: (date) => 
+    apiCall(`/attendance/date/${date}`),
   
   getAll: () => apiCall('/attendance'),
 }

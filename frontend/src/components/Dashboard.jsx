@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { employeeAPI, attendanceAPI } from '../services/api'
+import AddEmployeeForm from './AddEmployeeForm'
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -8,6 +9,7 @@ const Dashboard = () => {
   const [isCheckedIn, setIsCheckedIn] = useState(false)
   const [checkInTime, setCheckInTime] = useState('')
   const [employees, setEmployees] = useState([])
+  const [showAddEmployeeForm, setShowAddEmployeeForm] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [checkingAttendance, setCheckingAttendance] = useState(false)
@@ -187,7 +189,13 @@ const Dashboard = () => {
         <>
           {/* Header with Search and New Button */}
           <div className="employee-dashboard-header">
-            <button className="btn-new">NEW</button>
+            <button 
+              className="btn-new"
+              onClick={() => setShowAddEmployeeForm(true)}
+              title="Add New Employee"
+            >
+              NEW
+            </button>
             
             <div className="search-bar-container">
               <input
@@ -367,6 +375,14 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Add Employee Form Modal */}
+      {showAddEmployeeForm && (
+        <AddEmployeeForm
+          onClose={() => setShowAddEmployeeForm(false)}
+          onSuccess={fetchEmployees}
+        />
       )}
         </>
       )}

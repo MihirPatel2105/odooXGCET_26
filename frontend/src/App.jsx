@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
 import './App.css'
 import { authAPI } from './services/api'
 import Navbar from './components/Navbar'
@@ -13,7 +12,6 @@ import Settings from './components/Settings'
 import Profile from './components/Profile'
 import SignIn from './components/SignIn'
 import SignUp from './components/SignUp'
-import ResetPassword from './components/ResetPassword'
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard')
@@ -168,24 +166,19 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <Routes>
-        <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
-        <Route path="*" element={
-          <div className="auth-wrapper">
-            {authPage === 'signin' ? (
-              <SignIn 
-                onSignIn={handleSignIn} 
-                onSwitchToSignUp={() => setAuthPage('signup')}
-              />
-            ) : (
-              <SignUp 
-                onSignUp={handleSignUp}
-                onSwitchToSignIn={() => setAuthPage('signin')}
-              />
-            )}
-          </div>
-        } />
-      </Routes>
+      <div className="auth-wrapper">
+        {authPage === 'signin' ? (
+          <SignIn 
+            onSignIn={handleSignIn} 
+            onSwitchToSignUp={() => setAuthPage('signup')}
+          />
+        ) : (
+          <SignUp 
+            onSignUp={handleSignUp}
+            onSwitchToSignIn={() => setAuthPage('signin')}
+          />
+        )}
+      </div>
     )
   }
 
