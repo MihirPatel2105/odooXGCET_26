@@ -314,7 +314,7 @@ export const getAllAttendance = async (req, res) => {
    API 5: DATE-WISE ATTENDANCE FILTER (ADMIN)
 ========================================= */
 export const getAttendanceByDate = async (req, res) => {
-  try {\n    // Get logged-in user's company
+  try {    // Get logged-in user's company
     const loggedInUser = await User.findById(req.user._id);
     if (!loggedInUser || !loggedInUser.companyId) {
       return res.status(400).json({

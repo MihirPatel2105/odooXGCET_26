@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
-import { authAPI } from './services/api'
+import { authAPI, companyAPI } from './services/api'
 import Navbar from './components/Navbar'
 import Dashboard from './components/Dashboard'
 import EmployeeManagement from './components/EmployeeManagement'
@@ -26,6 +26,24 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authPage, setAuthPage] = useState('signin')
   const [user, setUser] = useState(null)
+  const [company, setCompany] = useState(null)
+
+  // Fetch company details when authenticated
+  useEffect(() => {
+    const fetchCompanyDetails = async () => {
+      if (isAuthenticated && localStorage.getItem('token')) {
+        try {
+          const response = await companyAPI.getDetails()
+          if (response.success && response.company) {
+            setCompany(response.company)
+          }
+        } catch (error) {
+          console.error('Failed to fetch company details:', error)
+        }
+      }
+    }
+    fetchCompanyDetails()
+  }, [isAuthenticated])
 
   // Handle tab changes from navbar
   const handleTabChange = (tab) => {
@@ -220,13 +238,15 @@ function App() {
       {isEmployee ? (
         <EmployeeNavbar 
           user={user}
+          company={company}
           activeView={activeView}
           setActiveView={setActiveView}
           onLogout={handleLogout}
         />
       ) : (
         <Navbar 
-          user={user} 
+          user={user}
+          company={company}
           activeTab={activeTab}
           setActiveTab={handleTabChange}
           setActiveView={setActiveView}

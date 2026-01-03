@@ -156,6 +156,8 @@ export const companyAPI = {
       body: JSON.stringify(companyData),
     }),
   
+  getDetails: () => apiCall('/company'),
+  
   getProfile: () => apiCall('/company/profile'),
   
   update: (companyData) => 
