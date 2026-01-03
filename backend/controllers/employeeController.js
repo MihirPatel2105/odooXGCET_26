@@ -1,17 +1,15 @@
 import Employee from "../models/Employee.js";
 import User from "../models/User.js";
+import Company from "../models/Company.js";
 import { hashPassword } from "../utils/hashPassword.js";
 import { generateLoginId, generatePassword } from "../utils/generateLoginId.js";
+import { sendEmployeeCredentialsEmail } from "../utils/sendEmail.js";
 
 /* =========================================
    CREATE EMPLOYEE (ADMIN)
 ========================================= */
 export const createEmployee = async (req, res) => {
   try {
-    console.log('=== CREATE EMPLOYEE REQUEST ===')
-    console.log('Request body:', req.body)
-    console.log('User:', req.user ? req.user._id : 'No user')
-    
     const {
       fullName,
       email,
@@ -25,7 +23,6 @@ export const createEmployee = async (req, res) => {
 
     // Validate required fields
     if (!fullName || !email) {
-      console.log('Validation failed: Missing fullName or email')
       return res.status(400).json({
         success: false,
         message: "Full name and email are required"
@@ -34,11 +31,7 @@ export const createEmployee = async (req, res) => {
 
     // Get the logged-in user's company ID
     const loggedInUser = await User.findById(req.user._id);
-    console.log('Logged in user:', loggedInUser ? loggedInUser.email : 'Not found')
-    console.log('Company ID:', loggedInUser ? loggedInUser.companyId : 'No company')
-    
     if (!loggedInUser || !loggedInUser.companyId) {
-      console.log('Error: User company not found')
       return res.status(400).json({
         success: false,
         message: "User company not found"
@@ -48,7 +41,6 @@ export const createEmployee = async (req, res) => {
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log('Error: User with email already exists')
       return res.status(400).json({
         success: false,
         message: "User with this email already exists"
@@ -64,20 +56,15 @@ export const createEmployee = async (req, res) => {
     // JODO → First 2 letters of first name + first 2 letters of last name
     // 2022 → Year of joining
     // 0001 → Serial number
-    console.log('Generating login ID...')
     const loginId = await generateLoginId(fullName, joiningDate, companyCode);
-    console.log('Generated login ID:', loginId)
 
     // Auto-generate secure password
     const autoPassword = generatePassword();
-    console.log('Generated password')
 
     // Hash the auto-generated password
     const hashedPassword = await hashPassword(autoPassword);
-    console.log('Password hashed')
     
     // Create user login with company ID
-    console.log('Creating user...')
     const user = await User.create({
       loginId,
       email,
@@ -87,10 +74,8 @@ export const createEmployee = async (req, res) => {
       isFirstLogin: true, // Force password change on first login
       isActive: true
     });
-    console.log('User created:', user._id)
 
     // Create employee profile with company ID
-    console.log('Creating employee profile...')
     const employee = await Employee.create({
       userId: user._id,
       companyId: loggedInUser.companyId,
@@ -103,12 +88,29 @@ export const createEmployee = async (req, res) => {
       dateOfJoining: joiningDate,
       status: "ACTIVE"
     });
-    console.log('Employee created:', employee._id)
 
     // Populate user data
     await employee.populate("userId", "email role loginId");
 
-    console.log('=== EMPLOYEE CREATED SUCCESSFULLY ===')
+    // Get company name for email
+    const company = await Company.findById(loggedInUser.companyId);
+    const companyName = company ? company.companyName : "Your Company";
+
+    // Send email with login credentials
+    try {
+      await sendEmployeeCredentialsEmail(
+        email,
+        fullName,
+        loginId,
+        autoPassword,
+        companyName
+      );
+      console.log('Employee credentials email sent successfully to:', email);
+    } catch (emailError) {
+      console.error('Failed to send employee credentials email:', emailError);
+      // Don't fail the employee creation if email fails, just log the error
+    }
+
     res.status(201).json({
       success: true,
       employee,
@@ -117,16 +119,14 @@ export const createEmployee = async (req, res) => {
         email: email,
         temporaryPassword: autoPassword
       },
-      message: `Employee created successfully. Login ID: ${loginId}. Temporary password has been generated. Employee must change password on first login.`
+      message: `Employee created successfully. Login credentials have been sent to ${email}. Employee must change password on first login.`
     });
 
   } catch (error) {
-    console.error('=== ERROR CREATING EMPLOYEE ===');
-    console.error('Error:', error);
-    console.error('Stack:', error.stack);
+    console.error(error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to create employee'
+      message: error.message
     });
   }
 };
