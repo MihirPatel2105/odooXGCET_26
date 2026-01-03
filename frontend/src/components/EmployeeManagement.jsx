@@ -8,8 +8,32 @@ const EmployeeManagement = () => {
   const [showAddEmployee, setShowAddEmployee] = useState(false)
   const [selectedEmployees, setSelectedEmployees] = useState([])
   const [employees, setEmployees] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [fetchingEmployees, setFetchingEmployees] = useState(true)
   const [error, setError] = useState(null)
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    designation: '',
+    department: '',
+    dateOfJoining: '',
+    address: ''
+  })
+  const [formError, setFormError] = useState('')
+  const [formSuccess, setFormSuccess] = useState('')
+
+  console.log('EmployeeManagement Component State:', {
+    showAddEmployee,
+    loading,
+    fetchingEmployees,
+    employeesCount: employees.length,
+    hasToken: !!localStorage.getItem('token')
+  })
+
+  useEffect(() => {
+    console.log('showAddEmployee changed to:', showAddEmployee)
+  }, [showAddEmployee])
 
   useEffect(() => {
     fetchEmployees()
@@ -17,7 +41,7 @@ const EmployeeManagement = () => {
 
   const fetchEmployees = async () => {
     try {
-      setLoading(true)
+      setFetchingEmployees(true)
       const response = await employeeAPI.getAll()
       if (response.success && response.employees) {
         // Transform backend data to match component structure
@@ -43,7 +67,7 @@ const EmployeeManagement = () => {
       setError(err.message)
       setEmployees([])
     } finally {
-      setLoading(false)
+      setFetchingEmployees(false)
     }
   }
 
@@ -74,10 +98,92 @@ const EmployeeManagement = () => {
     }
   }
 
+  const handleFormChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+    setFormError('')
+  }
+
+  const handleAddEmployee = async (e) => {
+    e.preventDefault()
+    
+    console.log('Add Employee button clicked')
+    console.log('Form data:', formData)
+    
+    // Validate form
+    if (!formData.fullName || !formData.email || !formData.department || !formData.designation) {
+      setFormError('Please fill in all required fields')
+      console.log('Validation failed - missing required fields')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setFormError('')
+      console.log('Sending request to create employee...')
+      
+      const response = await employeeAPI.create(formData)
+      console.log('Response received:', response)
+      
+      if (response.success) {
+        setFormSuccess('Employee added successfully!')
+        setFormError('')
+        console.log('Employee created successfully')
+        
+        // Reset form
+        setFormData({
+          fullName: '',
+          email: '',
+          phone: '',
+          designation: '',
+          department: '',
+          dateOfJoining: '',
+          address: ''
+        })
+        
+        // Refresh employee list
+        console.log('Refreshing employee list...')
+        await fetchEmployees()
+        
+        // Close modal after a short delay
+        setTimeout(() => {
+          setShowAddEmployee(false)
+          setFormSuccess('')
+        }, 2000)
+      } else {
+        console.error('Failed to create employee:', response.message)
+        setFormError(response.message || 'Failed to add employee')
+      }
+    } catch (err) {
+      console.error('Error adding employee:', err)
+      setFormError(err.message || 'Failed to add employee. Please check if you are logged in.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowAddEmployee(false)
+    setFormError('')
+    setFormSuccess('')
+    setFormData({
+      fullName: '',
+      email: '',
+      phone: '',
+      designation: '',
+      department: '',
+      dateOfJoining: '',
+      address: ''
+    })
+  }
+
   return (
     <div className="employee-management">
       {/* Loading State */}
-      {loading && (
+      {fetchingEmployees && (
         <div className="loading-state">
           <div className="loading-spinner"></div>
           <p>Loading employees...</p>
@@ -85,7 +191,7 @@ const EmployeeManagement = () => {
       )}
 
       {/* Error State */}
-      {error && !loading && (
+      {error && !fetchingEmployees && (
         <div className="error-state">
           <p className="error-message">❌ Error: {error}</p>
           <button className="btn btn-primary" onClick={fetchEmployees}>
@@ -95,7 +201,7 @@ const EmployeeManagement = () => {
       )}
 
       {/* Main Content */}
-      {!loading && !error && (
+      {!fetchingEmployees && !error && (
         <>
           {/* Header */}
           <div className="page-header card">
@@ -111,7 +217,15 @@ const EmployeeManagement = () => {
             </button>
             <button 
               className="btn btn-primary"
-              onClick={() => setShowAddEmployee(true)}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('Add Employee button clicked! Current showAddEmployee:', showAddEmployee)
+                alert('Button clicked! Opening modal...')
+                setShowAddEmployee(true)
+                console.log('showAddEmployee set to true')
+              }}
             >
               <span>👤➕</span>
               Add Employee
@@ -284,76 +398,129 @@ const EmployeeManagement = () => {
               <h2 className="modal-title">Add New Employee</h2>
               <button 
                 className="modal-close"
-                onClick={() => setShowAddEmployee(false)}
+                onClick={handleCloseModal}
               >
                 ✕
               </button>
             </div>
             <div className="modal-content">
-              <form className="employee-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">First Name *</label>
-                    <input type="text" className="form-input" required />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Last Name *</label>
-                    <input type="text" className="form-input" required />
-                  </div>
+              {formError && (
+                <div className="alert alert-error">
+                  ❌ {formError}
                 </div>
-
+              )}
+              {formSuccess && (
+                <div className="alert alert-success">
+                  ✅ {formSuccess}
+                </div>
+              )}
+              <form className="employee-form" onSubmit={handleAddEmployee}>
                 <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Full Name *</label>
+                    <input 
+                      type="text" 
+                      name="fullName"
+                      className="form-input" 
+                      value={formData.fullName}
+                      onChange={handleFormChange}
+                      required 
+                      placeholder="John Doe"
+                    />
+                  </div>
                   <div className="form-group">
                     <label className="form-label">Email Address *</label>
-                    <input type="email" className="form-input" required />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Phone Number</label>
-                    <input type="tel" className="form-input" />
+                    <input 
+                      type="email" 
+                      name="email"
+                      className="form-input" 
+                      value={formData.email}
+                      onChange={handleFormChange}
+                      required 
+                      placeholder="john@example.com"
+                    />
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
+                    <label className="form-label">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      name="phone"
+                      className="form-input" 
+                      value={formData.phone}
+                      onChange={handleFormChange}
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                  <div className="form-group">
                     <label className="form-label">Department *</label>
-                    <select className="form-select" required>
+                    <select 
+                      name="department"
+                      className="form-select" 
+                      value={formData.department}
+                      onChange={handleFormChange}
+                      required
+                    >
                       <option value="">Select Department</option>
                       {departments.map(dept => (
                         <option key={dept} value={dept}>{dept}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Position *</label>
-                    <input type="text" className="form-input" required />
-                  </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Join Date *</label>
-                    <input type="date" className="form-input" required />
+                    <label className="form-label">Position/Designation *</label>
+                    <input 
+                      type="text" 
+                      name="designation"
+                      className="form-input" 
+                      value={formData.designation}
+                      onChange={handleFormChange}
+                      required 
+                      placeholder="Software Engineer"
+                    />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Manager</label>
-                    <select className="form-select">
-                      <option value="">Select Manager</option>
-                      <option value="john-smith">John Smith</option>
-                      <option value="lisa-wong">Lisa Wong</option>
-                      <option value="david-brown">David Brown</option>
-                    </select>
+                    <label className="form-label">Join Date</label>
+                    <input 
+                      type="date" 
+                      name="dateOfJoining"
+                      className="form-input" 
+                      value={formData.dateOfJoining}
+                      onChange={handleFormChange}
+                    />
                   </div>
                 </div>
+
+                <div className="form-group">
+                  <label className="form-label">Address</label>
+                  <textarea 
+                    name="address"
+                    className="form-input" 
+                    value={formData.address}
+                    onChange={handleFormChange}
+                    rows="3"
+                    placeholder="Enter address"
+                  />
+                </div>
+
+                <div className="modal-footer">
+                  <button 
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleCloseModal}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? 'Adding...' : 'Add Employee'}
+                  </button>
+                </div>
               </form>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setShowAddEmployee(false)}
-              >
-                Cancel
-              </button>
-              <button className="btn btn-primary">Add Employee</button>
             </div>
           </div>
         </div>
@@ -448,10 +615,15 @@ const EmployeeManagement = () => {
 
         .search-input {
           width: 100%;
-          padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 2.5rem;
+          padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 2.5rem;
           border: 1px solid var(--gray-300);
           border-radius: var(--radius-md);
           font-size: 0.875rem;
+        }
+
+        .search-input:focus {
+          outline: none;
+          border-color: var(--primary-500);
         }
 
         .filter-controls {
@@ -464,13 +636,19 @@ const EmployeeManagement = () => {
           border: 1px solid var(--gray-300);
           border-radius: var(--radius-md);
           font-size: 0.875rem;
-          min-width: 150px;
+          background-color: var(--white);
+          cursor: pointer;
+        }
+
+        .filter-select:focus {
+          outline: none;
+          border-color: var(--primary-500);
         }
 
         .bulk-actions {
           padding: var(--spacing-md) var(--spacing-lg);
           background-color: var(--primary-50);
-          border-top: 1px solid var(--primary-200);
+          border-top: 1px solid var(--gray-200);
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -478,8 +656,8 @@ const EmployeeManagement = () => {
 
         .selected-count {
           font-size: 0.875rem;
-          color: var(--primary-700);
           font-weight: var(--font-weight-medium);
+          color: var(--gray-700);
         }
 
         .bulk-buttons {
@@ -491,12 +669,41 @@ const EmployeeManagement = () => {
           overflow: hidden;
         }
 
-        .table-checkbox {
-          accent-color: var(--primary-600);
+        .table-container {
+          overflow-x: auto;
+        }
+
+        .table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .table thead {
+          background-color: var(--gray-50);
+        }
+
+        .table th {
+          padding: var(--spacing-md);
+          text-align: left;
+          font-size: 0.75rem;
+          font-weight: var(--font-weight-semibold);
+          color: var(--gray-600);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border-bottom: 1px solid var(--gray-200);
+        }
+
+        .table td {
+          padding: var(--spacing-md);
+          border-bottom: 1px solid var(--gray-200);
         }
 
         .table-row:hover {
-          background-color: var(--primary-50);
+          background-color: var(--gray-50);
+        }
+
+        .table-checkbox {
+          cursor: pointer;
         }
 
         .employee-cell {
@@ -509,12 +716,12 @@ const EmployeeManagement = () => {
           width: 40px;
           height: 40px;
           border-radius: 50%;
-          background-color: var(--primary-600);
-          color: var(--white);
+          background: linear-gradient(135deg, var(--primary-600), var(--primary-400));
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: var(--font-weight-medium);
+          color: white;
+          font-weight: var(--font-weight-semibold);
           font-size: 0.875rem;
         }
 
@@ -549,6 +756,25 @@ const EmployeeManagement = () => {
         .manager-cell {
           font-size: 0.875rem;
           color: var(--gray-700);
+        }
+
+        .status-badge {
+          display: inline-block;
+          padding: var(--spacing-xs) var(--spacing-sm);
+          border-radius: var(--radius-sm);
+          font-size: 0.75rem;
+          font-weight: var(--font-weight-medium);
+          text-transform: capitalize;
+        }
+
+        .status-active {
+          background-color: #d1fae5;
+          color: #065f46;
+        }
+
+        .status-inactive {
+          background-color: #fee2e2;
+          color: #991b1b;
         }
 
         .action-buttons {
@@ -596,6 +822,35 @@ const EmployeeManagement = () => {
         .empty-message {
           color: var(--gray-600);
           margin: 0;
+        }
+
+        .loading-state,
+        .error-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--spacing-2xl);
+          min-height: 400px;
+        }
+
+        .loading-spinner {
+          width: 48px;
+          height: 48px;
+          border: 4px solid var(--gray-200);
+          border-top-color: var(--primary-600);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: var(--spacing-lg);
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+          color: var(--red-600);
+          margin-bottom: var(--spacing-lg);
         }
 
         /* Modal Styles */
@@ -651,6 +906,7 @@ const EmployeeManagement = () => {
           display: flex;
           align-items: center;
           justify-content: center;
+          font-size: 1.25rem;
         }
 
         .modal-close:hover {
@@ -663,6 +919,26 @@ const EmployeeManagement = () => {
           overflow-y: auto;
         }
 
+        .alert {
+          padding: var(--spacing-md);
+          border-radius: var(--radius-md);
+          margin-bottom: var(--spacing-lg);
+          font-size: 0.875rem;
+          font-weight: var(--font-weight-medium);
+        }
+
+        .alert-error {
+          background-color: #fee;
+          color: #c00;
+          border: 1px solid #fcc;
+        }
+
+        .alert-success {
+          background-color: #efe;
+          color: #0a0;
+          border: 1px solid #cfc;
+        }
+
         .employee-form {
           display: flex;
           flex-direction: column;
@@ -673,6 +949,32 @@ const EmployeeManagement = () => {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: var(--spacing-lg);
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-xs);
+        }
+
+        .form-label {
+          font-size: 0.875rem;
+          font-weight: var(--font-weight-medium);
+          color: var(--gray-700);
+        }
+
+        .form-input,
+        .form-select {
+          padding: var(--spacing-sm) var(--spacing-md);
+          border: 1px solid var(--gray-300);
+          border-radius: var(--radius-md);
+          font-size: 0.875rem;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+          outline: none;
+          border-color: var(--primary-500);
         }
 
         .modal-footer {
