@@ -6,12 +6,12 @@ export default function SignUp({ onSignUp, onSwitchToSignIn }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [formData, setFormData] = useState({
-    companyName: '',
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
+    companyName: 'Tech Solutions Inc.',
+    name: 'John Smith',
+    email: 'user@gmail.com',
+    phone: '1234567890',
+    password: 'user123',
+    confirmPassword: 'user123',
     photo: null
   })
   const [errors, setErrors] = useState({})

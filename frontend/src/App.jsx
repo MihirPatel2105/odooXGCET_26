@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import './App.css'
-import Sidebar from './components/Sidebar'
 import Navbar from './components/Navbar'
 import Dashboard from './components/Dashboard'
 import EmployeeManagement from './components/EmployeeManagement'
@@ -99,17 +98,14 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} />
-      <div className="main-content">
-        <Navbar 
-          user={user} 
-          activeTab={activeTab} 
-          setActiveTab={handleTabChange}
-          onLogout={handleLogout}
-        />
-        <div className="content-area">
-          {renderActiveView()}
-        </div>
+      <Navbar 
+        user={user} 
+        activeTab={activeTab} 
+        setActiveTab={handleTabChange}
+        onLogout={handleLogout}
+      />
+      <div className="content-area">
+        {renderActiveView()}
       </div>
     </div>
   )
