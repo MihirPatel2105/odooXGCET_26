@@ -5,7 +5,9 @@ import {
   getSelfAttendance,
   getAllAttendance,
   getAttendanceByDate,
-  correctAttendance
+  correctAttendance,
+  getTodayAttendance,
+  getPayableDays
 } from "../controllers/attendanceController.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
@@ -23,7 +25,7 @@ router.post("/check-in", protect, checkIn);
 // Check-out (Employee)
 router.post("/check-out", protect, checkOut);
 
-// Get own attendance (Employee)
+// Get own attendance (Employee) - defaults to current month
 router.get("/self", protect, getSelfAttendance);
 
 /* =========================================
@@ -33,8 +35,14 @@ router.get("/self", protect, getSelfAttendance);
 // Get all attendance (Admin)
 router.get("/all", protect, adminOnly, getAllAttendance);
 
+// Get today's attendance summary (Admin)
+router.get("/today", protect, adminOnly, getTodayAttendance);
+
 // Get attendance by date (Admin)
 router.get("/date", protect, adminOnly, getAttendanceByDate);
+
+// Get payable days for payslip generation (Admin)
+router.get("/payable-days", protect, adminOnly, getPayableDays);
 
 // Correct attendance (Admin)
 router.put("/correct/:attendanceId", protect, adminOnly, correctAttendance);

@@ -175,20 +175,27 @@ export const getSelfAttendance = async (req, res) => {
 
     let query = { employeeId: employee._id };
 
-    // Filter by month and year if provided
+    // Default to current month if not provided
+    let startDate, endDate;
     if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
-      endDate.setHours(23, 59, 59, 999);
-      query.date = { $gte: startDate, $lte: endDate };
+      startDate = new Date(year, month - 1, 1);
+      endDate = new Date(year, month, 0);
+    } else {
+      // Default to current month
+      const now = new Date();
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     }
+    
+    endDate.setHours(23, 59, 59, 999);
+    query.date = { $gte: startDate, $lte: endDate };
 
     // Fetch attendance records
     const attendance = await Attendance.find(query)
       .sort({ date: -1 })
       .lean();
 
-    // Format response
+    // Format response with working time details
     const formattedAttendance = attendance.map(record => ({
       _id: record._id,
       date: record.date.toISOString().split('T')[0],
@@ -207,10 +214,28 @@ export const getSelfAttendance = async (req, res) => {
       status: record.status
     }));
 
+    // Calculate summary for payslip basis
+    const presentDays = attendance.filter(a => a.status === "PRESENT").length;
+    const halfDays = attendance.filter(a => a.status === "HALF_DAY").length;
+    const leaveDays = attendance.filter(a => a.status === "LEAVE").length;
+    const absentDays = attendance.filter(a => a.status === "ABSENT").length;
+    
+    // Calculate payable days (Present + Half_Day/2 + Approved Leaves)
+    const payableDays = presentDays + (halfDays * 0.5) + leaveDays;
+
     res.status(200).json({
       success: true,
       count: formattedAttendance.length,
-      attendance: formattedAttendance
+      attendance: formattedAttendance,
+      summary: {
+        totalDays: attendance.length,
+        presentDays,
+        halfDays,
+        leaveDays,
+        absentDays,
+        payableDays: payableDays,
+        unpaidDays: absentDays
+      }
     });
   } catch (error) {
     console.error(error);
@@ -375,6 +400,154 @@ export const correctAttendance = async (req, res) => {
       success: true,
       message: "Attendance corrected successfully",
       attendance
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* =========================================
+   API 7: GET TODAY'S ATTENDANCE (ADMIN)
+   For viewing all employees present on current day
+========================================= */
+export const getTodayAttendance = async (req, res) => {
+  try {
+    // Get today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Fetch today's attendance with employee details
+    const attendance = await Attendance.find({
+      date: { $gte: today, $lt: tomorrow }
+    }).populate({
+      path: "employeeId",
+      select: "employeeCode fullName department designation profileImage"
+    }).sort({ checkIn: -1 });
+
+    // Separate by status
+    const present = attendance.filter(a => a.checkIn && a.status === "PRESENT");
+    const halfDay = attendance.filter(a => a.status === "HALF_DAY");
+    const onLeave = attendance.filter(a => a.status === "LEAVE");
+    const absent = attendance.filter(a => a.status === "ABSENT");
+
+    res.status(200).json({
+      success: true,
+      date: today.toISOString().split('T')[0],
+      summary: {
+        totalEmployees: attendance.length,
+        present: present.length,
+        halfDay: halfDay.length,
+        onLeave: onLeave.length,
+        absent: absent.length
+      },
+      attendance: {
+        present,
+        halfDay,
+        onLeave,
+        absent
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* =========================================
+   API 8: GET PAYABLE DAYS FOR EMPLOYEE
+   Calculate payable days for payslip generation
+========================================= */
+export const getPayableDays = async (req, res) => {
+  try {
+    const { employeeId, month, year } = req.query;
+
+    if (!employeeId || !month || !year) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide employeeId, month, and year"
+      });
+    }
+
+    // Verify employee exists
+    const employee = await Employee.findById(employeeId)
+      .select("employeeCode fullName");
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found"
+      });
+    }
+
+    // Get date range for the month
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Fetch attendance records for the month
+    const attendance = await Attendance.find({
+      employeeId: employeeId,
+      date: { $gte: startDate, $lte: endDate }
+    });
+
+    // Calculate attendance summary
+    const presentDays = attendance.filter(a => a.status === "PRESENT").length;
+    const halfDays = attendance.filter(a => a.status === "HALF_DAY").length;
+    const leaveDays = attendance.filter(a => a.status === "LEAVE").length;
+    const absentDays = attendance.filter(a => a.status === "ABSENT").length;
+
+    // Calculate total working hours
+    const totalWorkHours = attendance.reduce((sum, a) => sum + (a.workHours || 0), 0);
+    const totalExtraHours = attendance.reduce((sum, a) => sum + (a.extraHours || 0), 0);
+
+    // Calculate payable days
+    // Formula: Present days + (Half days * 0.5) + Approved leave days
+    const payableDays = presentDays + (halfDays * 0.5) + leaveDays;
+
+    // Unpaid days = Absent days (these reduce salary)
+    const unpaidDays = absentDays;
+
+    // Total calendar days in month
+    const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+    res.status(200).json({
+      success: true,
+      employee: {
+        id: employee._id,
+        employeeCode: employee.employeeCode,
+        fullName: employee.fullName
+      },
+      period: {
+        month: parseInt(month),
+        year: parseInt(year),
+        totalDaysInMonth
+      },
+      attendance: {
+        totalRecords: attendance.length,
+        presentDays,
+        halfDays,
+        leaveDays,
+        absentDays,
+        totalWorkHours: parseFloat(totalWorkHours.toFixed(2)),
+        totalExtraHours: parseFloat(totalExtraHours.toFixed(2))
+      },
+      payslipData: {
+        payableDays: parseFloat(payableDays.toFixed(1)),
+        unpaidDays: unpaidDays,
+        deductionApplicable: unpaidDays > 0
+      },
+      message: unpaidDays > 0 
+        ? `${unpaidDays} unpaid day(s) will reduce salary during payslip computation`
+        : "No unpaid days. Full salary applicable."
     });
   } catch (error) {
     console.error(error);
