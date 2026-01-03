@@ -7,7 +7,8 @@ const EmployeeNavbar = ({ user, activeView, setActiveView, onLogout }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'attendance', label: 'Attendance', icon: '🕐' },
-    { id: 'timeoff', label: 'Time Off', icon: '🏖️' }
+    { id: 'timeoff', label: 'Time Off', icon: '🏖️' },
+    { id: 'profile', label: 'Profile', icon: '👤' }
   ]
 
   return (

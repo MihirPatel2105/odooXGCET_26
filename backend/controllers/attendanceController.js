@@ -198,17 +198,9 @@ export const getSelfAttendance = async (req, res) => {
     // Format response with working time details
     const formattedAttendance = attendance.map(record => ({
       _id: record._id,
-      date: record.date.toISOString().split('T')[0],
-      checkIn: record.checkIn ? record.checkIn.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }) : null,
-      checkOut: record.checkOut ? record.checkOut.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }) : null,
+      date: record.date,
+      checkIn: record.checkIn,
+      checkOut: record.checkOut,
       workHours: record.workHours || 0,
       extraHours: record.extraHours || 0,
       status: record.status

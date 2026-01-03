@@ -18,6 +18,7 @@ import EmployeeDashboard from './components/employee/EmployeeDashboard'
 import EmployeeAttendance from './components/employee/EmployeeAttendance'
 import EmployeeTimeOff from './components/employee/EmployeeTimeOff'
 import EmployeePayroll from './components/employee/EmployeePayroll'
+import EmployeeProfile from './components/employee/EmployeeProfile'
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard')
@@ -44,7 +45,7 @@ function App() {
     const isEmployee = user?.role === 'EMPLOYEE'
     
     if (isEmployee) {
-      // Employee Portal Views - Only Dashboard, Attendance, and Time Off
+      // Employee Portal Views - Only Dashboard, Attendance, Time Off, and Profile
       switch(activeView) {
         case 'dashboard':
           return <EmployeeDashboard user={user} />
@@ -52,6 +53,8 @@ function App() {
           return <EmployeeAttendance user={user} />
         case 'timeoff':
           return <EmployeeTimeOff user={user} />
+        case 'profile':
+          return <EmployeeProfile user={user} />
         default:
           return <EmployeeDashboard user={user} />
       }

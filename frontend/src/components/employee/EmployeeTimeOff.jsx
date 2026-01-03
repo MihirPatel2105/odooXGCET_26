@@ -103,20 +103,6 @@ const EmployeeTimeOff = ({ user }) => {
     return matchesSearch && matchesFilter
   })
 
-  // Get status badge class
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'approved':
-        return 'status-approved'
-      case 'rejected':
-        return 'status-rejected'
-      case 'pending':
-        return 'status-pending'
-      default:
-        return ''
-    }
-  }
-
   // Calculate statistics
   const stats = {
     total: timeOffRequests.length,
@@ -127,7 +113,7 @@ const EmployeeTimeOff = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="time-off">
+      <div className="attendance-tracking">
         <div className="loading-state">
           <div className="loading-spinner"></div>
           <p>Loading leave requests...</p>
@@ -137,23 +123,21 @@ const EmployeeTimeOff = ({ user }) => {
   }
 
   return (
-    <div className="time-off">
+    <div className="attendance-tracking">
       {/* Header */}
-      <div className="time-off-header">
-        <div className="header-left">
-          <h2 className="page-title">My Time Off Requests</h2>
-          <p className="page-subtitle">Manage your leave applications</p>
-        </div>
+      <div className="attendance-header">
+        <h2 className="attendance-title">My Time Off Requests</h2>
         <button 
-          className="btn-primary"
+          className="btn-check-in"
           onClick={() => setShowNewModal(true)}
+          style={{ padding: '0.75rem 1.5rem', fontSize: '0.95rem' }}
         >
           + New Request
         </button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="stats-grid">
+      <div className="stats-grid" style={{ marginBottom: '2rem' }}>
         <div className="stat-card">
           <div className="stat-content">
             <p className="stat-label">Total Requests</p>
@@ -181,35 +165,42 @@ const EmployeeTimeOff = ({ user }) => {
       </div>
 
       {/* Filters */}
-      <div className="filters-bar">
+      <div className="date-navigation" style={{ marginBottom: '1.5rem' }}>
         <input
           type="text"
           className="search-input"
           placeholder="Search requests..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ 
+            flex: 1, 
+            padding: '0.75rem 1rem', 
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '0.95rem'
+          }}
         />
-        <div className="filter-buttons">
+        <div className="view-buttons">
           <button 
-            className={`filter-btn ${selectedFilter === 'all' ? 'active' : ''}`}
+            className={`day-btn ${selectedFilter === 'all' ? 'active' : ''}`}
             onClick={() => setSelectedFilter('all')}
           >
             All
           </button>
           <button 
-            className={`filter-btn ${selectedFilter === 'pending' ? 'active' : ''}`}
+            className={`day-btn ${selectedFilter === 'pending' ? 'active' : ''}`}
             onClick={() => setSelectedFilter('pending')}
           >
             Pending
           </button>
           <button 
-            className={`filter-btn ${selectedFilter === 'approved' ? 'active' : ''}`}
+            className={`day-btn ${selectedFilter === 'approved' ? 'active' : ''}`}
             onClick={() => setSelectedFilter('approved')}
           >
             Approved
           </button>
           <button 
-            className={`filter-btn ${selectedFilter === 'rejected' ? 'active' : ''}`}
+            className={`day-btn ${selectedFilter === 'rejected' ? 'active' : ''}`}
             onClick={() => setSelectedFilter('rejected')}
           >
             Rejected
@@ -218,135 +209,175 @@ const EmployeeTimeOff = ({ user }) => {
       </div>
 
       {/* Requests Table */}
-      <div className="card">
-        <div className="table-container">
-          {error && (
-            <div className="error-message">
-              <p>Error loading requests: {error}</p>
-            </div>
-          )}
+      <div className="attendance-table-container">
+        {error && (
+          <div className="error-message" style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '8px' }}>
+            <p>Error loading requests: {error}</p>
+          </div>
+        )}
 
-          {filteredRequests.length === 0 ? (
-            <div className="empty-state">
-              <p>No leave requests found</p>
-            </div>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Leave Type</th>
-                  <th>Start Date</th>
-                  <th>End Date</th>
-                  <th>Days</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                  <th>Admin Comment</th>
+        {filteredRequests.length === 0 ? (
+          <div className="empty-state" style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
+            <p>No leave requests found</p>
+          </div>
+        ) : (
+          <table className="attendance-table">
+            <thead>
+              <tr>
+                <th>Leave Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Days</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Admin Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRequests.map((request) => (
+                <tr key={request.id}>
+                  <td>
+                    <span className="leave-type-badge">
+                      {request.timeOffType}
+                    </span>
+                  </td>
+                  <td>{request.startDate}</td>
+                  <td>{request.endDate}</td>
+                  <td>{request.days} days</td>
+                  <td className="reason-cell">{request.reason}</td>
+                  <td>
+                    <span className={`status-badge-attendance ${request.status}`}>
+                      {request.status}
+                    </span>
+                  </td>
+                  <td className="comment-cell">
+                    {request.adminComment || '-'}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredRequests.map((request) => (
-                  <tr key={request.id}>
-                    <td>
-                      <span className="leave-type-badge">
-                        {request.timeOffType}
-                      </span>
-                    </td>
-                    <td>{request.startDate}</td>
-                    <td>{request.endDate}</td>
-                    <td>{request.days} days</td>
-                    <td className="reason-cell">{request.reason}</td>
-                    <td>
-                      <span className={`status-badge ${getStatusClass(request.status)}`}>
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="comment-cell">
-                      {request.adminComment || '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* New Request Modal */}
       {showNewModal && (
         <div className="modal-overlay" onClick={() => setShowNewModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>New Leave Request</h3>
+          <div className="leave-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="leave-modal-header">
+              <div className="modal-title-section">
+                <div className="modal-icon">📝</div>
+                <div>
+                  <h3 className="modal-title-main">Request Time Off</h3>
+                  <p className="modal-subtitle">Submit your leave request for approval</p>
+                </div>
+              </div>
               <button 
-                className="modal-close"
+                className="modal-close-btn"
                 onClick={() => setShowNewModal(false)}
+                aria-label="Close"
               >
-                ×
+                ✕
               </button>
             </div>
-            <form onSubmit={handleSubmitRequest}>
-              <div className="form-group">
-                <label>Leave Type *</label>
-                <select
-                  value={formData.leaveType}
-                  onChange={(e) => setFormData({...formData, leaveType: e.target.value})}
-                  required
-                >
-                  <option value="PAID">Paid Leave</option>
-                  <option value="SICK">Sick Leave</option>
-                  <option value="UNPAID">Unpaid Leave</option>
-                </select>
+            
+            <form onSubmit={handleSubmitRequest} className="leave-form">
+              <div className="form-section">
+                <label className="form-label">
+                  <span className="label-text">Leave Type</span>
+                  <span className="required-mark">*</span>
+                </label>
+                <div className="select-wrapper">
+                  <select
+                    className="form-select"
+                    value={formData.leaveType}
+                    onChange={(e) => setFormData({...formData, leaveType: e.target.value})}
+                    required
+                  >
+                    <option value="PAID">🌴 Paid Leave</option>
+                    <option value="SICK">🏥 Sick Leave</option>
+                    <option value="UNPAID">📋 Unpaid Leave</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Start Date *</label>
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                    required
-                  />
+              <div className="form-row-grid">
+                <div className="form-section">
+                  <label className="form-label">
+                    <span className="label-text">Start Date</span>
+                    <span className="required-mark">*</span>
+                  </label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">📅</span>
+                    <input
+                      type="date"
+                      className="form-input with-icon"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                      min={new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label>End Date *</label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                    min={formData.startDate}
-                    required
-                  />
+                <div className="form-section">
+                  <label className="form-label">
+                    <span className="label-text">End Date</span>
+                    <span className="required-mark">*</span>
+                  </label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">📅</span>
+                    <input
+                      type="date"
+                      className="form-input with-icon"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                      min={formData.startDate || new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
               {formData.startDate && formData.endDate && (
-                <div className="days-info">
-                  Total Days: {calculateDays(formData.startDate, formData.endDate)}
+                <div className="duration-display">
+                  <div className="duration-icon">⏱️</div>
+                  <div className="duration-text">
+                    <span className="duration-label">Duration:</span>
+                    <span className="duration-value">{calculateDays(formData.startDate, formData.endDate)} days</span>
+                  </div>
                 </div>
               )}
 
-              <div className="form-group">
-                <label>Reason *</label>
+              <div className="form-section">
+                <label className="form-label">
+                  <span className="label-text">Reason for Leave</span>
+                  <span className="required-mark">*</span>
+                </label>
                 <textarea
+                  className="form-textarea"
                   value={formData.reason}
                   onChange={(e) => setFormData({...formData, reason: e.target.value})}
-                  placeholder="Explain why you need this leave..."
+                  placeholder="Please provide a detailed reason for your leave request..."
                   rows="4"
                   required
+                  maxLength={500}
                 />
+                <div className="char-count">
+                  {formData.reason.length}/500 characters
+                </div>
               </div>
 
-              <div className="modal-actions">
+              <div className="form-actions">
                 <button 
                   type="button" 
-                  className="btn-secondary"
+                  className="btn-cancel"
                   onClick={() => setShowNewModal(false)}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-submit">
+                  <span>✓</span>
                   Submit Request
                 </button>
               </div>

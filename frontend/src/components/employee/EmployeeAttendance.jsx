@@ -28,8 +28,11 @@ const EmployeeAttendance = ({ user }) => {
       const year = selectedDate.getFullYear()
       const response = await attendanceAPI.getSelf(month, year)
       
+      console.log('Attendance API response:', response)
+      
       if (response.success) {
         const filtered = filterByView(response.attendance || [])
+        console.log('Filtered attendance records:', filtered)
         setAttendanceRecords(filtered)
         calculateStats(filtered)
       }
@@ -102,42 +105,69 @@ const EmployeeAttendance = ({ user }) => {
 
   const formatTime = (dateString) => {
     if (!dateString) return '-'
-    const date = new Date(dateString)
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    })
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      })
+    } catch (error) {
+      return '-'
+    }
   }
 
   const calculateWorkHours = (checkIn, checkOut) => {
     if (!checkIn || !checkOut) return '-'
-    const diff = new Date(checkOut) - new Date(checkIn)
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+    try {
+      const checkInDate = new Date(checkIn)
+      const checkOutDate = new Date(checkOut)
+      if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) return '-'
+      
+      const diff = checkOutDate - checkInDate
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+    } catch (error) {
+      return '-'
+    }
   }
 
   const calculateExtraHours = (checkIn, checkOut) => {
     if (!checkIn || !checkOut) return '00:00'
-    const diff = new Date(checkOut) - new Date(checkIn)
-    const totalHours = diff / (1000 * 60 * 60)
-    const standardHours = 8
-    const extraHours = Math.max(0, totalHours - standardHours)
-    const hours = Math.floor(extraHours)
-    const minutes = Math.floor((extraHours % 1) * 60)
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+    try {
+      const checkInDate = new Date(checkIn)
+      const checkOutDate = new Date(checkOut)
+      if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) return '00:00'
+      
+      const diff = checkOutDate - checkInDate
+      const totalHours = diff / (1000 * 60 * 60)
+      const standardHours = 8
+      const extraHours = Math.max(0, totalHours - standardHours)
+      const hours = Math.floor(extraHours)
+      const minutes = Math.floor((extraHours % 1) * 60)
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+    } catch (error) {
+      return '00:00'
+    }
   }
 
   const formatDate = (date) => {
-    if (typeof date === 'string') {
-      date = new Date(date)
+    if (!date) return '-'
+    try {
+      if (typeof date === 'string') {
+        date = new Date(date)
+      }
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString('en-US', { 
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      })
+    } catch (error) {
+      return '-'
     }
-    return date.toLocaleDateString('en-US', { 
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    })
   }
 
   const getViewLabel = () => {

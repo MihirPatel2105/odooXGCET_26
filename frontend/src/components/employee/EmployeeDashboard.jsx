@@ -15,8 +15,16 @@ const EmployeeDashboard = ({ user }) => {
   })
   const [loading, setLoading] = useState(true)
 
+  // Fetch dashboard data on mount and when component becomes visible
   useEffect(() => {
     fetchDashboardData()
+    
+    // Also set up an interval to refresh status every 30 seconds
+    const intervalId = setInterval(() => {
+      checkTodayAttendance()
+    }, 30000)
+    
+    return () => clearInterval(intervalId)
   }, [])
 
   const fetchDashboardData = async () => {
@@ -66,8 +74,11 @@ const EmployeeDashboard = ({ user }) => {
         })
         
         if (todayRecord) {
+          console.log('Today\'s attendance record:', todayRecord)
           setTodayAttendance(todayRecord)
-          if (todayRecord.checkIn) {
+          // Check if checked in but NOT checked out yet
+          if (todayRecord.checkIn && !todayRecord.checkOut) {
+            console.log('Setting checked in: true')
             setIsCheckedIn(true)
             const checkInDate = new Date(todayRecord.checkIn)
             const timeString = checkInDate.toLocaleTimeString('en-US', {
@@ -76,8 +87,21 @@ const EmployeeDashboard = ({ user }) => {
               hour12: true
             })
             setCheckInTime(timeString)
+          } else if (todayRecord.checkIn && todayRecord.checkOut) {
+            // Already checked out - show completed status
+            console.log('Already checked out')
+            setIsCheckedIn(false)
+            setCheckInTime('')
           }
+        } else {
+          console.log('No attendance record for today')
+          setIsCheckedIn(false)
+          setCheckInTime('')
         }
+      } else {
+        console.log('No attendance data')
+        setIsCheckedIn(false)
+        setCheckInTime('')
       }
     } catch (error) {
       console.error('Error checking attendance:', error)
@@ -91,11 +115,14 @@ const EmployeeDashboard = ({ user }) => {
       const year = today.getFullYear()
       const response = await attendanceAPI.getSelf(month, year)
       
+      console.log('Dashboard - Attendance response:', response)
+      
       if (response.success && response.attendance) {
         // Sort by date descending and get last 7 days
         const sorted = response.attendance
           .sort((a, b) => new Date(b.date) - new Date(a.date))
           .slice(0, 7)
+        console.log('Dashboard - Recent attendance records:', sorted)
         setRecentAttendance(sorted)
       }
     } catch (error) {
@@ -142,30 +169,48 @@ const EmployeeDashboard = ({ user }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    })
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return 'N/A'
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      })
+    } catch (error) {
+      return 'N/A'
+    }
   }
 
   const formatTime = (dateString) => {
     if (!dateString) return '-'
-    const date = new Date(dateString)
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    })
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      })
+    } catch (error) {
+      return '-'
+    }
   }
 
   const calculateWorkHours = (checkIn, checkOut) => {
     if (!checkIn || !checkOut) return '-'
-    const diff = new Date(checkOut) - new Date(checkIn)
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    return `${hours}h ${minutes}m`
+    try {
+      const checkInDate = new Date(checkIn)
+      const checkOutDate = new Date(checkOut)
+      if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) return '-'
+      
+      const diff = checkOutDate - checkInDate
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      return `${hours}h ${minutes}m`
+    } catch (error) {
+      return '-'
+    }
   }
 
   if (loading) {
@@ -319,8 +364,8 @@ const EmployeeDashboard = ({ user }) => {
           </div>
           <div className="action-card">
             <div className="action-icon">👤</div>
-            <h3>Update Profile</h3>
-            <p>Edit your information</p>
+            <h3>My Profile</h3>
+            <p>View your information</p>
           </div>
           <div className="action-card">
             <div className="action-icon">📊</div>
