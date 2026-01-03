@@ -4,7 +4,9 @@ import {
   getLoggedInUser,
   changePassword,
   firstLoginReset,
-  logoutUser
+  logoutUser,
+  forgotPassword,
+  resetPassword
 } from "../controllers/authController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
@@ -12,6 +14,8 @@ const router = express.Router();
 
 // Public Routes
 router.post("/login", loginUser);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 // Protected Routes (Require Authentication)
 router.get("/me", protect, getLoggedInUser);

@@ -486,3 +486,201 @@ This is an automated email. Please do not reply.
         html
     });
 };
+
+/**
+ * @desc    Send forgot password reset OTP email
+ * @param   {string} email - User email address
+ * @param   {string} name - User name
+ * @param   {string} otp - 6-digit OTP code
+ * @returns {Promise}
+ */
+export const sendForgotPasswordEmail = async (email, name, otp) => {
+    const subject = '🔐 Password Reset Request - Your OTP Code';
+    
+    const text = `
+Dear ${name || 'User'},
+
+You have requested to reset your password for your HRMS account.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PASSWORD RESET OTP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your One-Time Password (OTP): ${otp}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This OTP is valid for 10 minutes only.
+
+If you did not request a password reset, please ignore this email or contact support if you have concerns.
+
+Best regards,
+HRMS Team
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This is an automated email. Please do not reply.
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Request</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🔐 Password Reset Request</h1>
+                            <p style="margin: 10px 0 0 0; color: #ffe0e6; font-size: 16px;">Secure Your Account</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">Dear <strong>${name || 'User'}</strong>,</p>
+                            <p style="margin: 0 0 30px 0; color: #555555; font-size: 15px; line-height: 1.6;">We received a request to reset the password for your HRMS account. Use the OTP code below to proceed with resetting your password.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%); border-radius: 10px; border-left: 5px solid #f5576c; margin: 30px 0;">
+                                <tr>
+                                    <td style="padding: 30px; text-align: center;">
+                                        <p style="margin: 0 0 15px 0; color: #666666; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Your One-Time Password</p>
+                                        <p style="margin: 0; color: #f5576c; font-size: 48px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">${otp}</p>
+                                        <p style="margin: 15px 0 0 0; color: #999999; font-size: 13px;">Valid for 10 minutes</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;"><strong>⚠️ Security Notice:</strong><br>If you did not request this password reset, please ignore this email. Your password will remain unchanged.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin: 30px 0 0 0; color: #555555; font-size: 15px; line-height: 1.6;">Best regards,<br><strong style="color: #f5576c;">HRMS Security Team</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="margin: 0 0 5px 0; color: #6c757d; font-size: 13px;">This is an automated security email from HRMS System</p>
+                            <p style="margin: 0; color: #6c757d; font-size: 13px;">Please do not reply to this message</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `.trim();
+
+    await sendEmail({
+        to: email,
+        subject,
+        text,
+        html
+    });
+};
+
+/**
+ * @desc    Send password reset link email
+ * @param   {string} email - User email address
+ * @param   {string} name - User name
+ * @param   {string} resetUrl - Password reset URL
+ * @returns {Promise}
+ */
+export const sendPasswordResetEmail = async (email, name, resetUrl) => {
+    const subject = '🔐 Password Reset Request - Reset Your Password';
+    
+    const text = `
+Dear ${name || 'User'},
+
+You have requested to reset your password for your HRMS account.
+
+Click the link below to reset your password:
+${resetUrl}
+
+This link is valid for 30 minutes only.
+
+If you did not request this password reset, please ignore this email or contact support if you have concerns.
+
+Best regards,
+HRMS Security Team
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This is an automated email. Please do not reply.
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Request</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🔐 Password Reset Request</h1>
+                            <p style="margin: 10px 0 0 0; color: #e0e7ff; font-size: 16px;">Secure Your Account</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">Dear <strong>${name || 'User'}</strong>,</p>
+                            <p style="margin: 0 0 30px 0; color: #555555; font-size: 15px; line-height: 1.6;">We received a request to reset the password for your HRMS account. Click the button below to reset your password.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="${resetUrl}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4);">Reset Password</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin: 25px 0; color: #666666; font-size: 14px; text-align: center;">Or copy and paste this link in your browser:</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <tr>
+                                    <td style="word-break: break-all;">
+                                        <a href="${resetUrl}" style="color: #667eea; font-size: 13px; text-decoration: none;">${resetUrl}</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 10px 0; color: #856404; font-size: 15px; font-weight: 700;">⚠️ Important:</p>
+                                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">This link will expire in <strong>30 minutes</strong>. If you did not request this password reset, please ignore this email. Your password will remain unchanged.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin: 30px 0 0 0; color: #555555; font-size: 15px; line-height: 1.6;">Best regards,<br><strong style="color: #667eea;">HRMS Security Team</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="margin: 0 0 5px 0; color: #6c757d; font-size: 13px;">This is an automated security email from HRMS System</p>
+                            <p style="margin: 0; color: #6c757d; font-size: 13px;">Please do not reply to this message</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `.trim();
+
+    await sendEmail({
+        to: email,
+        subject,
+        text,
+        html
+    });
+};
