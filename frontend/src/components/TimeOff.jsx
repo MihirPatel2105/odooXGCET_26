@@ -120,33 +120,12 @@ const TimeOff = ({ userRole = 'HR Manager' }) => {
       {/* Main Content */}
       {!loading && !error && (
         <>
-          {/* Info Note */}
-          <div className="timeoff-info-note">
-        <div className="note-header">
-          <h3 className="note-title">Note</h3>
-          <span className="note-author">Milan Sinha</span>
-        </div>
-        <div className="note-content">
-          <p className="note-author-name">Aditya Chauhan</p>
-          <p className="note-text">
-            Employees can view only their own time off records, while Admins and HR Officers 
-            can view time off records & approve/reject them for all employees
-          </p>
-        </div>
-      </div>
-
       {/* Header Section */}
       <div className="timeoff-header">
         <div className="timeoff-header-left">
           <h2 className="timeoff-title">Time Off</h2>
           <p className="timeoff-subtitle">Allocation</p>
         </div>
-        {canApprove && (
-          <div className="timeoff-actions-note">
-            <span className="actions-label">Reject & Approve buttons</span>
-            <span className="actions-sublabel">For Admin & HR Officer</span>
-          </div>
-        )}
       </div>
 
       {/* Toolbar */}
@@ -162,18 +141,6 @@ const TimeOff = ({ userRole = 'HR Manager' }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
-      </div>
-
-      {/* Allocation Cards */}
-      <div className="allocation-cards">
-        <div className="allocation-card paid-time-off">
-          <h3 className="allocation-title">Paid time Off</h3>
-          <p className="allocation-days">24 Days Available</p>
-        </div>
-        <div className="allocation-card sick-time-off">
-          <h3 className="allocation-title">Sick time Off</h3>
-          <p className="allocation-days">07 Days Available</p>
         </div>
       </div>
 
